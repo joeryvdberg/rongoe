@@ -443,10 +443,55 @@ export default function App() {
   const [adminPwError, setAdminPwError] = useState(false);
   const [floatText, setFloatText] = useState(null);
   const [playerStats, setPlayerStats] = useState({});
+  const [comicBursts, setComicBursts] = useState([]);
 
   function showFloat(text, color) {
     setFloatText({ text, color });
     setTimeout(() => setFloatText(null), 1000);
+  }
+
+  function showComicBurst(words = ["BAM"]) {
+    const burstId = Date.now() + Math.random();
+    const normalized = words.filter(Boolean).slice(0, 3);
+    const items = normalized.map((word, idx) => ({
+      word,
+      x: 18 + Math.random() * 64,
+      y: 18 + Math.random() * 58,
+      offset: idx * 110,
+      scale: 0.82 + Math.random() * 0.36,
+    }));
+    setComicBursts(prev => [...prev, { id: burstId, items }]);
+    setTimeout(() => {
+      setComicBursts(prev => prev.filter(b => b.id !== burstId));
+    }, 1200);
+  }
+
+  function celebrateUserAction(action) {
+    if (action === "profile") {
+      showComicBurst(["RONGOE", "POW"]);
+      return;
+    }
+    if (action === "prefOn") {
+      showFloat("VRIJ!", G.blue);
+      showComicBurst(["ZAP"]);
+      return;
+    }
+    if (action === "prefOff") {
+      showComicBurst(["BOOM"]);
+      return;
+    }
+    if (action === "swapStart") {
+      showFloat("LET'S GO!", G.orange);
+      showComicBurst(["BAM"]);
+      return;
+    }
+    if (action === "swapSend") {
+      showComicBurst(["SWAP", "POW"]);
+      return;
+    }
+    if (action === "rosterView") {
+      showComicBurst(["RONGOE"]);
+    }
   }
 
   const ADMIN_PASSWORD = "gloryboyz";
@@ -538,6 +583,7 @@ export default function App() {
       setView("adminlogin");
     } else {
       setView(id);
+      if (id === "home" || id === "roster") celebrateUserAction("rosterView");
     }
   }
 
@@ -559,6 +605,7 @@ export default function App() {
     await db.from("schedule").delete().neq("date", "____");
     await db.from("schedule").insert(rows);
     showFloat("KAPOW!", G.red);
+    showComicBurst(["RONGOE", "BAM"]);
     notify("RONGOE! Rooster gemaakt!");
   }
 
@@ -570,9 +617,19 @@ export default function App() {
   }
 
   async function updatePlayerStats(id, goals, assists) {
+    const prevGoals = playerStats[id]?.goals || 0;
+    const prevAssists = playerStats[id]?.assists || 0;
     const g = Math.max(0, Number(goals) || 0);
     const a = Math.max(0, Number(assists) || 0);
     setPlayerStats(prev => ({ ...prev, [id]: { goals: g, assists: a } }));
+    if (g > prevGoals) {
+      showFloat("SIUUUUU!!", G.gold);
+      showComicBurst(["BAM", "POW"]);
+    }
+    if (a > prevAssists) {
+      showFloat("ASSIST!", G.blue);
+      showComicBurst(["ZAP"]);
+    }
     await db.from("player_stats").upsert({ player_id: id, goals: g, assists: a });
   }
 
@@ -583,6 +640,7 @@ export default function App() {
     setPlayers(prev => [...prev, newPlayer]);
     await db.from("players").insert(newPlayer);
     await db.from("player_stats").upsert({ player_id: newId, goals: 0, assists: 0 });
+    showComicBurst(["BAM"]);
   }
 
   // ── REMOVE PLAYER ────────────────────────────────────────────────────────────
@@ -593,6 +651,7 @@ export default function App() {
     await db.from("players").delete().eq("id", id);
     await db.from("availability").delete().eq("player_id", id);
     await db.from("player_stats").delete().eq("player_id", id);
+    showComicBurst(["POW"]);
   }
 
   // ── SAVE MATCH DATES ─────────────────────────────────────────────────────────
@@ -635,6 +694,7 @@ export default function App() {
     setSched(newSched);
     setSwapOffers(prev => prev.filter(o => o !== offer));
     showFloat("POW!", G.orange);
+    showComicBurst(["SWAP", "ZAP"]);
     notify(fp.name + " en " + tp.name + " geruild!");
 
     // Save updated schedule entry
@@ -670,6 +730,23 @@ export default function App() {
       <style>{css}</style>
       <div className="htbg" style={{ minHeight: "100vh" }}>
         {floatText && <FloatText text={floatText.text} color={floatText.color} />}
+        {comicBursts.map(burst => (
+          <div key={burst.id} style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 9996 }}>
+            {burst.items.map((item, idx) => (
+              <ComicPop
+                key={item.word + idx}
+                word={item.word}
+                style={{
+                  position: "absolute",
+                  left: item.x + "%",
+                  top: item.y + "%",
+                  transform: "translate(-50%, -50%) scale(" + item.scale + ")",
+                  animationDelay: item.offset + "ms",
+                }}
+              />
+            ))}
+          </div>
+        ))}
         {toast && (
           <div className="anim-kapow" style={{
             position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)",
@@ -751,6 +828,7 @@ export default function App() {
             <HomeView
               players={players} setView={setView} setActivePlayer={setActivePlayer}
               avail={avail} sched={sched} matchDates={matchDates} playerStats={playerStats}
+              celebrateUserAction={celebrateUserAction}
             />
           )}
           {view === "roster" && (
@@ -776,6 +854,7 @@ export default function App() {
               swapReq={swapReq} startSwap={startSwap} sendSwap={sendSwap}
               myOffers={myOffers} acceptSwap={acceptSwap} declineSwap={declineSwap}
               playerStats={playerStats}
+              celebrateUserAction={celebrateUserAction}
             />
           )}
         </div>
@@ -785,7 +864,7 @@ export default function App() {
 }
 
 // ── HOME VIEW ─────────────────────────────────────────────────────────────────
-function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats }) {
+function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, celebrateUserAction }) {
   const comicTileGradients = [
     "linear-gradient(160deg, #57b8ff, #318fdb)",
     "linear-gradient(160deg, #ffb347, #f48a1f)",
@@ -813,7 +892,7 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
             const tileBg = comicTileGradients[i % comicTileGradients.length];
             const roleColor = "rgba(255, 255, 255, 0.9)";
             return (
-            <button key={p.id} onClick={() => { setActivePlayer(p); setView("player"); }} className="card-hover btn-press anim-slidein comic-tile" style={{ animationDelay:(i*0.06)+"s",
+            <button key={p.id} onClick={() => { setActivePlayer(p); setView("player"); celebrateUserAction("profile"); }} className="card-hover btn-press anim-slidein comic-tile" style={{ animationDelay:(i*0.06)+"s",
               background: tileBg, border:"2px solid #0d1118", borderRadius:14,
               boxShadow:"0 10px 20px rgba(0,0,0,0.30), 3px 3px 0 #0d1118", padding:"12px 8px", cursor:"pointer",
               display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6,
@@ -1204,12 +1283,18 @@ function DatesView({ matchDates, saveMatchDates, genSchedule }) {
 }
 
 // ── PLAYER VIEW ───────────────────────────────────────────────────────────────
-function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, mySchedule, swapReq, startSwap, sendSwap, myOffers, acceptSwap, declineSwap, playerStats }) {
+function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, mySchedule, swapReq, startSwap, sendSwap, myOffers, acceptSwap, declineSwap, playerStats, celebrateUserAction }) {
   const schedule = mySchedule(player.id);
   const playCount = schedule.filter(d => d.playing).length;
   const skipCount = schedule.filter(d => !d.playing).length;
   const goals = playerStats[player.id]?.goals || 0;
   const assists = playerStats[player.id]?.assists || 0;
+
+  function handleTogglePreference(di) {
+    const becomesFree = !avail[player.id]?.[di];
+    celebrateUserAction(becomesFree ? "prefOn" : "prefOff");
+    toggleAvail(player.id, di);
+  }
 
   return (
     <div>
@@ -1287,13 +1372,13 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
                         {playing ? (
                           <>
                             <Tag bg={G.green}>✓ SPEELT</Tag>
-                            {!swapReq && <Btn small bg={G.orange} onClick={() => startSwap(player.id, di)}>🔄 RUILEN</Btn>}
+                            {!swapReq && <Btn small bg={G.orange} onClick={() => { celebrateUserAction("swapStart"); startSwap(player.id, di); }}>🔄 RUILEN</Btn>}
                             {isActive && <Tag bg={G.red}>↓ KIES SPELER</Tag>}
                           </>
                         ) : (
                           <Tag bg="#aaa">— SKIPT</Tag>
                         )}
-                        <button onClick={() => toggleAvail(player.id, di)} style={{
+                        <button onClick={() => handleTogglePreference(di)} style={{
                           fontFamily:"Bangers, cursive", fontSize:12, letterSpacing:0.5,
                           padding:"4px 10px", borderRadius:6,
                           border:"1.5px solid "+(isFree?G.red:G.line),
@@ -1316,7 +1401,7 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
                 </div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
                   {players.filter(p => p.id!==player.id).map(p => (
-                    <Btn key={p.id} small bg={G.blue} onClick={() => sendSwap(p.id, swapReq.di)}>{p.name}</Btn>
+                    <Btn key={p.id} small bg={G.blue} onClick={() => { celebrateUserAction("swapSend"); sendSwap(p.id, swapReq.di); }}>{p.name}</Btn>
                   ))}
                   <Btn small outline onClick={() => startSwap(null,null)}>ANNULEREN</Btn>
                 </div>
@@ -1337,7 +1422,7 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
             const isFree = avail[player.id]?.[i];
             const isPlaying = sched ? (sched[date]?.keeper?.id===player.id || sched[date]?.players?.some(p=>p.id===player.id)) : null;
             return (
-              <button key={date} onClick={() => toggleAvail(player.id, i)} style={{
+              <button key={date} onClick={() => handleTogglePreference(i)} style={{
                 padding:"10px 6px", borderRadius:10,
                 border:"3px solid "+(isFree?G.red:G.ink),
                 background:isFree?"#5f2f37":"#2d4168",
