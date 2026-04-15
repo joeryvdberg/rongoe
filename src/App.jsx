@@ -450,6 +450,12 @@ export default function App() {
     setTimeout(() => setFloatText(null), 1000);
   }
 
+  function handlePlayerTileClick(player) {
+    if ((player?.name || "").trim().toLowerCase() === "jurre") {
+      showFloat("67!", G.gold);
+    }
+  }
+
   function showComicBurst(words = ["BAM"]) {
     const burstId = Date.now() + Math.random();
     const normalized = words.filter(Boolean).slice(0, 3);
@@ -464,34 +470,6 @@ export default function App() {
     setTimeout(() => {
       setComicBursts(prev => prev.filter(b => b.id !== burstId));
     }, 1200);
-  }
-
-  function celebrateUserAction(action) {
-    if (action === "profile") {
-      showComicBurst(["RONGOE", "POW"]);
-      return;
-    }
-    if (action === "prefOn") {
-      showFloat("VRIJ!", G.blue);
-      showComicBurst(["ZAP"]);
-      return;
-    }
-    if (action === "prefOff") {
-      showComicBurst(["BOOM"]);
-      return;
-    }
-    if (action === "swapStart") {
-      showFloat("LET'S GO!", G.orange);
-      showComicBurst(["BAM"]);
-      return;
-    }
-    if (action === "swapSend") {
-      showComicBurst(["SWAP", "POW"]);
-      return;
-    }
-    if (action === "rosterView") {
-      showComicBurst(["RONGOE"]);
-    }
   }
 
   const ADMIN_PASSWORD = "gloryboyz";
@@ -583,7 +561,6 @@ export default function App() {
       setView("adminlogin");
     } else {
       setView(id);
-      if (id === "home" || id === "roster") celebrateUserAction("rosterView");
     }
   }
 
@@ -828,7 +805,7 @@ export default function App() {
             <HomeView
               players={players} setView={setView} setActivePlayer={setActivePlayer}
               avail={avail} sched={sched} matchDates={matchDates} playerStats={playerStats}
-              celebrateUserAction={celebrateUserAction}
+              onPlayerTileClick={handlePlayerTileClick}
             />
           )}
           {view === "roster" && (
@@ -854,7 +831,6 @@ export default function App() {
               swapReq={swapReq} startSwap={startSwap} sendSwap={sendSwap}
               myOffers={myOffers} acceptSwap={acceptSwap} declineSwap={declineSwap}
               playerStats={playerStats}
-              celebrateUserAction={celebrateUserAction}
             />
           )}
         </div>
@@ -864,7 +840,7 @@ export default function App() {
 }
 
 // ── HOME VIEW ─────────────────────────────────────────────────────────────────
-function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, celebrateUserAction }) {
+function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick }) {
   const comicTileGradients = [
     "linear-gradient(160deg, #57b8ff, #318fdb)",
     "linear-gradient(160deg, #ffb347, #f48a1f)",
@@ -892,7 +868,7 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
             const tileBg = comicTileGradients[i % comicTileGradients.length];
             const roleColor = "rgba(255, 255, 255, 0.9)";
             return (
-            <button key={p.id} onClick={() => { setActivePlayer(p); setView("player"); celebrateUserAction("profile"); }} className="card-hover btn-press anim-slidein comic-tile" style={{ animationDelay:(i*0.06)+"s",
+            <button key={p.id} onClick={() => { onPlayerTileClick?.(p); setActivePlayer(p); setView("player"); }} className="card-hover btn-press anim-slidein comic-tile" style={{ animationDelay:(i*0.06)+"s",
               background: tileBg, border:"2px solid #0d1118", borderRadius:14,
               boxShadow:"0 10px 20px rgba(0,0,0,0.30), 3px 3px 0 #0d1118", padding:"12px 8px", cursor:"pointer",
               display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6,
@@ -1283,18 +1259,12 @@ function DatesView({ matchDates, saveMatchDates, genSchedule }) {
 }
 
 // ── PLAYER VIEW ───────────────────────────────────────────────────────────────
-function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, mySchedule, swapReq, startSwap, sendSwap, myOffers, acceptSwap, declineSwap, playerStats, celebrateUserAction }) {
+function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, mySchedule, swapReq, startSwap, sendSwap, myOffers, acceptSwap, declineSwap, playerStats }) {
   const schedule = mySchedule(player.id);
   const playCount = schedule.filter(d => d.playing).length;
   const skipCount = schedule.filter(d => !d.playing).length;
   const goals = playerStats[player.id]?.goals || 0;
   const assists = playerStats[player.id]?.assists || 0;
-
-  function handleTogglePreference(di) {
-    const becomesFree = !avail[player.id]?.[di];
-    celebrateUserAction(becomesFree ? "prefOn" : "prefOff");
-    toggleAvail(player.id, di);
-  }
 
   return (
     <div>
@@ -1372,13 +1342,13 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
                         {playing ? (
                           <>
                             <Tag bg={G.green}>✓ SPEELT</Tag>
-                            {!swapReq && <Btn small bg={G.orange} onClick={() => { celebrateUserAction("swapStart"); startSwap(player.id, di); }}>🔄 RUILEN</Btn>}
+                            {!swapReq && <Btn small bg={G.orange} onClick={() => startSwap(player.id, di)}>🔄 RUILEN</Btn>}
                             {isActive && <Tag bg={G.red}>↓ KIES SPELER</Tag>}
                           </>
                         ) : (
                           <Tag bg="#aaa">— SKIPT</Tag>
                         )}
-                        <button onClick={() => handleTogglePreference(di)} style={{
+                        <button onClick={() => toggleAvail(player.id, di)} style={{
                           fontFamily:"Bangers, cursive", fontSize:12, letterSpacing:0.5,
                           padding:"4px 10px", borderRadius:6,
                           border:"1.5px solid "+(isFree?G.red:G.line),
@@ -1401,7 +1371,7 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
                 </div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
                   {players.filter(p => p.id!==player.id).map(p => (
-                    <Btn key={p.id} small bg={G.blue} onClick={() => { celebrateUserAction("swapSend"); sendSwap(p.id, swapReq.di); }}>{p.name}</Btn>
+                    <Btn key={p.id} small bg={G.blue} onClick={() => sendSwap(p.id, swapReq.di)}>{p.name}</Btn>
                   ))}
                   <Btn small outline onClick={() => startSwap(null,null)}>ANNULEREN</Btn>
                 </div>
@@ -1422,7 +1392,7 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
             const isFree = avail[player.id]?.[i];
             const isPlaying = sched ? (sched[date]?.keeper?.id===player.id || sched[date]?.players?.some(p=>p.id===player.id)) : null;
             return (
-              <button key={date} onClick={() => handleTogglePreference(i)} style={{
+              <button key={date} onClick={() => toggleAvail(player.id, i)} style={{
                 padding:"10px 6px", borderRadius:10,
                 border:"3px solid "+(isFree?G.red:G.ink),
                 background:isFree?"#5f2f37":"#2d4168",
