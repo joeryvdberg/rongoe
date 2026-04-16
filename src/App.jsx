@@ -496,14 +496,7 @@ export default function App() {
   const [comicBursts, setComicBursts] = useState([]);
   const [competitionData, setCompetitionData] = useState(COMPETITION_INFO);
   const [competitionTestMode, setCompetitionTestMode] = useState(false);
-  const [motmVotes, setMotmVotes] = useState(() => {
-    try {
-      const raw = localStorage.getItem("motmVotesByRound");
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
-  });
+  const [motmVotes, setMotmVotes] = useState({});
 
   function showFloat(text, color) {
     setFloatText({ text, color });
@@ -525,9 +518,22 @@ export default function App() {
     notify("Competitiedata ververst!");
   }
 
-  function castMotmVote(voterId, targetId) {
+  async function castMotmVote(voterId, targetId) {
     if (!voterId || !targetId || voterId === targetId) return;
     const roundKey = getThursdayRoundKey();
+    const { error } = await db.from("motm_votes").upsert(
+      {
+        round_key: roundKey,
+        voter_player_id: voterId,
+        target_player_id: targetId,
+      },
+      { onConflict: "round_key,voter_player_id" }
+    );
+    if (error) {
+      console.error("MOTM save error:", error);
+      notify("Kon MOTM stem niet opslaan.", true);
+      return;
+    }
     setMotmVotes(prev => ({
       ...prev,
       [roundKey]: {
@@ -551,14 +557,6 @@ export default function App() {
   function toggleCompetitionTestMode() {
     setCompetitionTestMode(prev => !prev);
   }
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("motmVotesByRound", JSON.stringify(motmVotes));
-    } catch {
-      // Ignore write errors in private mode/storage-blocked contexts.
-    }
-  }, [motmVotes]);
 
   function showComicBurst(words = ["BAM"]) {
     const burstId = Date.now() + Math.random();
@@ -633,6 +631,20 @@ export default function App() {
             };
           });
           setPlayerStats(statsObj);
+        }
+
+        // Load MOTM votes (shared cross-device via Supabase)
+        const { data: mvData, error: mvErr } = await db
+          .from("motm_votes")
+          .select("round_key,voter_player_id,target_player_id");
+        if (!mvErr && mvData) {
+          const votesObj = {};
+          mvData.forEach(row => {
+            const round = row.round_key;
+            if (!votesObj[round]) votesObj[round] = {};
+            votesObj[round][row.voter_player_id] = row.target_player_id;
+          });
+          setMotmVotes(votesObj);
         }
       } catch (e) {
         console.error("Load error:", e);
