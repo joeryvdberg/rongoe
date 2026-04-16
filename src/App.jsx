@@ -1041,6 +1041,7 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
             return (
             <div key={p.id} style={{ position:"relative" }}>
               <button onClick={() => { onPlayerTileClick?.(p); setActivePlayer(p); setView("player"); }} className="card-hover btn-press anim-slidein comic-tile" style={{ animationDelay:(i*0.06)+"s",
+                width:"100%",
                 background: tileBg, border:"2px solid #0d1118", borderRadius:14,
                 boxShadow:"0 10px 20px rgba(0,0,0,0.30), 3px 3px 0 #0d1118", padding:"12px 8px", cursor:"pointer",
                 display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6,
@@ -1769,42 +1770,44 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
         </div>
       </Panel>
 
-      <Card style={{ padding:"10px 12px", marginTop:10, background:"rgba(255,255,255,0.04)", boxShadow:"none" }}>
-        <div style={{ fontSize:12, color:"#b7c6de", marginBottom:8 }}>
-          <strong>Man of the Match</strong> ({fmtDate(motmRoundKey)}):{" "}
-          {motmWinner ? `${motmWinner.name} (${motmWinnerVotes} stem${motmWinnerVotes === 1 ? "" : "men"})` : "nog geen stemmen"}
-        </div>
-        <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
-          <span style={{ fontSize:11, color:"#8fa3c2" }}>Optioneel:</span>
-          <select
-            value={motmChoice}
-            onChange={e => setMotmChoice(e.target.value)}
-            style={{ border:"1.5px solid "+G.line, borderRadius:8, background:G.paperSoft, color:G.ink, padding:"6px 8px", fontSize:12, minWidth:180 }}
-          >
-            <option value="">Kies MOTM...</option>
-            {players.filter(p => p.id !== player.id).map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-          <Btn
-            small
-            bg={G.blue}
-            disabled={!motmChoice}
-            onClick={() => {
-              if (!motmChoice) return;
-              onCastMotmVote(player.id, Number(motmChoice));
-              setMotmChoice("");
-            }}
-          >
-            STEMMEN
-          </Btn>
-          {motmVotesForRound[player.id] && (
-            <span style={{ fontSize:11, color:"#9fd0ff" }}>
-              Jouw stem: {players.find(p => String(p.id) === String(motmVotesForRound[player.id]))?.name || "onbekend"}
-            </span>
-          )}
-        </div>
-      </Card>
+      <Panel title="MAN OF THE MATCH" color={G.gold} icon="🗳️">
+        <Card style={{ padding:"10px 12px", background:"rgba(255,255,255,0.04)", boxShadow:"none" }}>
+          <div style={{ fontSize:12, color:"#b7c6de", marginBottom:8 }}>
+            Week van {fmtDate(motmRoundKey)}:{" "}
+            {motmWinner ? `${motmWinner.name} (${motmWinnerVotes} stem${motmWinnerVotes === 1 ? "" : "men"})` : "nog geen stemmen"}
+          </div>
+          <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+            <span style={{ fontSize:11, color:"#8fa3c2" }}>Optioneel:</span>
+            <select
+              value={motmChoice}
+              onChange={e => setMotmChoice(e.target.value)}
+              style={{ border:"1.5px solid "+G.line, borderRadius:8, background:G.paperSoft, color:G.ink, padding:"6px 8px", fontSize:12, minWidth:180 }}
+            >
+              <option value="">Kies MOTM...</option>
+              {players.filter(p => p.id !== player.id).map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <Btn
+              small
+              bg={G.blue}
+              disabled={!motmChoice}
+              onClick={() => {
+                if (!motmChoice) return;
+                onCastMotmVote(player.id, Number(motmChoice));
+                setMotmChoice("");
+              }}
+            >
+              STEMMEN
+            </Btn>
+            {motmVotesForRound[player.id] && (
+              <span style={{ fontSize:11, color:"#9fd0ff" }}>
+                Jouw stem: {players.find(p => String(p.id) === String(motmVotesForRound[player.id]))?.name || "onbekend"}
+              </span>
+            )}
+          </div>
+        </Card>
+      </Panel>
     </div>
   );
 }
