@@ -25,6 +25,47 @@ const DEFAULT_PLAYERS = [
   { id: 8, name: "Speler 8", role: "veld",   sort_order: 7 },
 ];
 
+const COMPETITION_INFO = {
+  sourceUrl: "https://www.powerleague.com/nl/competitie?league_id=997ebdeb-bbf2-d0a4-e814-cfa760326bc5&division_id=997ebdeb-bbf2-d0a4-e814-cfa7c0da8fc5",
+  leagueName: "Thursday Late League S38",
+  city: "Amsterdam",
+  venue: "Sportspark Olympiaplein",
+  format: "Men's 5s",
+  gameDay: "Donderdag",
+  gamePrice: "EUR 57.00 per game",
+  updatedLabel: "Scrape op 14-04-2026",
+  topTeams: [
+    { pos: 1, club: "Los Fuegos", played: 11, won: 8, points: 24 },
+    { pos: 2, club: "The Mohicans", played: 10, won: 7, points: 21 },
+    { pos: 3, club: "Connaisseurs", played: 11, won: 7, points: 21 },
+  ],
+  standings: [
+    { pos: 1, club: "Los Fuegos", played: 11, won: 8, drawn: 0, lost: 3, gf: 82, ga: 66, gd: 16, points: 24 },
+    { pos: 2, club: "The Mohicans", played: 10, won: 7, drawn: 0, lost: 3, gf: 64, ga: 44, gd: 20, points: 21 },
+    { pos: 3, club: "Connaisseurs", played: 11, won: 7, drawn: 0, lost: 4, gf: 92, ga: 77, gd: 15, points: 21 },
+    { pos: 4, club: "De Hertenjagers Reunited", played: 10, won: 6, drawn: 0, lost: 4, gf: 78, ga: 66, gd: 12, points: 18 },
+    { pos: 5, club: "De Meer", played: 11, won: 6, drawn: 0, lost: 5, gf: 61, ga: 57, gd: 4, points: 18 },
+    { pos: 6, club: "The Big 5", played: 11, won: 5, drawn: 1, lost: 5, gf: 67, ga: 61, gd: 6, points: 16 },
+    { pos: 7, club: "Glory Boyz FC", played: 11, won: 2, drawn: 1, lost: 8, gf: 54, ga: 69, gd: -15, points: 7 },
+    { pos: 8, club: "FC Linksbuitenadem", played: 11, won: 1, drawn: 0, lost: 10, gf: 43, ga: 101, gd: -58, points: 3 },
+  ],
+  nextGames: [
+    { date: "16/04/2026", time: "19:00", home: "Glory Boyz FC", away: "De Hertenjagers Reunited" },
+    { date: "16/04/2026", time: "19:00", home: "De Meer", away: "FC Linksbuitenadem" },
+    { date: "16/04/2026", time: "19:00", home: "The Big 5", away: "Los Fuegos" },
+    { date: "16/04/2026", time: "20:00", home: "The Mohicans", away: "Connaisseurs" },
+    { date: "23/04/2026", time: "20:00", home: "De Hertenjagers Reunited", away: "De Meer" },
+  ],
+  lastRoundLabel: "09/04/2026",
+  lastRoundResults: [
+    { home: "De Hertenjagers Reunited", homeScore: 10, awayScore: 5, away: "The Big 5" },
+    { home: "Connaisseurs", homeScore: 14, awayScore: 6, away: "Los Fuegos" },
+    { home: "FC Linksbuitenadem", homeScore: 6, awayScore: 10, away: "The Mohicans" },
+    { home: "Glory Boyz FC", homeScore: 4, awayScore: 7, away: "De Meer" },
+  ],
+};
+const COMPETITION_START_DATE = "2026-05-07";
+
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function fmtDate(d) {
   return new Date(d + "T00:00:00").toLocaleDateString("nl-NL", {
@@ -444,6 +485,8 @@ export default function App() {
   const [floatText, setFloatText] = useState(null);
   const [playerStats, setPlayerStats] = useState({});
   const [comicBursts, setComicBursts] = useState([]);
+  const [competitionData, setCompetitionData] = useState(COMPETITION_INFO);
+   const [competitionTestMode, setCompetitionTestMode] = useState(false);
 
   function showFloat(text, color) {
     setFloatText({ text, color });
@@ -454,6 +497,21 @@ export default function App() {
     if ((player?.name || "").trim().toLowerCase() === "jurre") {
       showFloat("67!", G.gold);
     }
+  }
+
+  function refreshCompetitionData() {
+    const refreshedAt = new Date().toLocaleString("nl-NL");
+    setCompetitionData({
+      ...COMPETITION_INFO,
+      updatedLabel: "Handmatig ververst op " + refreshedAt,
+    });
+    notify("Competitiedata ververst!");
+  }
+
+  const competitionUnlocked = new Date() >= new Date(COMPETITION_START_DATE + "T00:00:00") || (adminUnlocked && competitionTestMode);
+
+  function toggleCompetitionTestMode() {
+    setCompetitionTestMode(prev => !prev);
   }
 
   function showComicBurst(words = ["BAM"]) {
@@ -697,6 +755,7 @@ export default function App() {
   const navItems = [
     { id: "home",   label: "SPELERS", icon: "" },
     { id: "roster", label: "ROOSTER", icon: "" },
+    { id: "competition", label: "COMPETITIE", icon: "" },
     { id: "admin",  label: "ADMIN",   icon: "" },
   ];
 
@@ -810,6 +869,17 @@ export default function App() {
           )}
           {view === "roster" && (
             <RosterView players={players} sched={sched} avail={avail} matchDates={matchDates} />
+          )}
+          {view === "competition" && (
+            <CompetitionView
+              competitionData={competitionData}
+              competitionUnlocked={competitionUnlocked}
+              competitionStartDate={COMPETITION_START_DATE}
+              refreshCompetitionData={refreshCompetitionData}
+              adminUnlocked={adminUnlocked}
+              competitionTestMode={competitionTestMode}
+              toggleCompetitionTestMode={toggleCompetitionTestMode}
+            />
           )}
           {view === "adminlogin" && (
             <AdminLogin adminPwInput={adminPwInput} setAdminPwInput={setAdminPwInput} adminPwError={adminPwError} tryAdminLogin={tryAdminLogin} />
@@ -1051,6 +1121,167 @@ function RosterView({ players, sched, avail, matchDates }) {
           })}
         </div>
       </Panel>
+    </div>
+  );
+}
+
+// ── COMPETITION VIEW ──────────────────────────────────────────────────────────
+function CompetitionView({ competitionData, competitionUnlocked, competitionStartDate, refreshCompetitionData, adminUnlocked, competitionTestMode, toggleCompetitionTestMode }) {
+  const gb = competitionData.standings.find(t => t.club === "Glory Boyz FC");
+  const unlockDate = new Date(competitionStartDate + "T00:00:00").toLocaleDateString("nl-NL", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const msLeft = new Date(competitionStartDate + "T00:00:00") - new Date();
+  const daysLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
+  const baseUnlocked = new Date() >= new Date(competitionStartDate + "T00:00:00");
+  const usingTestMode = competitionUnlocked && !baseUnlocked && adminUnlocked && competitionTestMode;
+  return (
+    <div>
+      <Panel title="COMPETITIE INFO" color={G.blue} icon="🏆">
+        <Card style={{ padding: "12px 14px", background: G.paperSoft, boxShadow: "none" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
+            <Tag bg={competitionUnlocked ? G.green : G.orange}>
+              {competitionUnlocked ? (usingTestMode ? "ADMIN TESTMODE" : "ACTIEF") : "BESCHIKBAAR VANAF " + unlockDate}
+            </Tag>
+            <Btn small bg={G.blue} onClick={refreshCompetitionData} disabled={!competitionUnlocked}>
+              🔄 VERVERS COMPETITIEDATA
+            </Btn>
+            <label style={{ fontSize: 11, color: adminUnlocked ? "#b7c6de" : "#8d9bb3", display: "flex", alignItems: "center", gap: 4 }}>
+              <input
+                type="checkbox"
+                checked={competitionTestMode}
+                onChange={toggleCompetitionTestMode}
+                disabled={!adminUnlocked}
+                style={{ accentColor: G.gold }}
+              />
+              Admin testmode
+            </label>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+            <div><strong>League:</strong> {competitionData.leagueName}</div>
+            <div><strong>Locatie:</strong> {competitionData.city}</div>
+            <div><strong>Veld:</strong> {competitionData.venue}</div>
+            <div><strong>Format:</strong> {competitionData.format}</div>
+            <div><strong>Speeldag:</strong> {competitionData.gameDay}</div>
+            <div><strong>Kosten:</strong> {competitionData.gamePrice}</div>
+          </div>
+          <div style={{ marginTop: 10, fontSize: 12, color: "#b7c6de" }}>
+            {competitionData.updatedLabel} · bron: <a href={competitionData.sourceUrl} target="_blank" rel="noreferrer" style={{ color: "#9ec9f7" }}>Powerleague</a>
+          </div>
+          {!competitionUnlocked && (
+            <div style={{ marginTop: 10, fontSize: 13, color: "#ffe0ab", fontWeight: 700 }}>
+              Competitiedata gaat live over {daysLeft} dag(en). Tot die tijd houden we deze tab in pre-season modus.
+            </div>
+          )}
+          {!adminUnlocked && (
+            <div style={{ marginTop: 8, fontSize: 12, color: "#9fb2ce" }}>
+              Log eerst in via de `ADMIN` tab om testmode te activeren.
+            </div>
+          )}
+          {usingTestMode && (
+            <div style={{ marginTop: 8, fontSize: 12, color: "#ffe0ab" }}>
+              Admin testmode actief — competitiedata is alvast zichtbaar voor jou, maar nog niet geldig voor het echte seizoen.
+            </div>
+          )}
+        </Card>
+      </Panel>
+
+      {!competitionUnlocked && (
+        <Panel title="PRE-SEASON" color={G.orange} icon="⏳">
+          <Card style={{ padding: "12px 14px", background: "rgba(217,138,59,0.12)" }}>
+            <p style={{ lineHeight: 1.6 }}>
+              Deze competitie-sectie wordt automatisch actief vanaf <strong>{unlockDate}</strong>.
+              Daarna kun je met de knop bovenaan de data verversen.
+            </p>
+          </Card>
+        </Panel>
+      )}
+
+      {competitionUnlocked && <Panel title="GLORY BOYZ STATUS" color={G.orange} icon="⚽">
+        <Card style={{ padding: "12px 14px", background: "linear-gradient(160deg, rgba(79,159,224,0.20), rgba(215,173,91,0.10))" }}>
+          {gb ? (
+            <>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+                <Tag bg={G.blue}>Positie #{gb.pos}</Tag>
+                <Tag bg={G.green}>Punten {gb.points}</Tag>
+                <Tag bg={G.orange}>Doelsaldo {gb.gd}</Tag>
+                <Tag bg={G.red}>W-V-G: {gb.won}-{gb.lost}-{gb.drawn}</Tag>
+              </div>
+              {(gb.pos === 1 || gb.pos === 8) && (
+                <div style={{ marginTop: 4 }}>
+                  {gb.pos === 1 && <Tag bg={G.green}>⬆ PROMOTIE</Tag>}
+                  {gb.pos === 8 && <Tag bg={G.red}>⬇ DEGRADATIE</Tag>}
+                </div>
+              )}
+            </>
+          ) : (
+            <div>Glory Boyz FC niet gevonden in de huidige stand.</div>
+          )}
+        </Card>
+      </Panel>}
+
+      {competitionUnlocked && <Panel title="VOLGENDE WEDSTRIJDEN" color={G.green} icon="📅">
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {competitionData.nextGames.map((m, i) => (
+            <Card key={m.date + m.time + i} style={{ padding: "10px 12px", background: G.paperSoft }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                <div style={{ fontFamily: "Bangers, cursive", fontSize: 18, letterSpacing: 0.8, fontWeight: 500 }}>{m.home} vs {m.away}</div>
+                <Tag bg={G.green}>{m.date} {m.time}</Tag>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </Panel>}
+
+      {competitionUnlocked && <Panel title="STAND" color={G.brown} icon="📊">
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
+            <thead>
+              <tr>
+                {["#", "Club", "P", "W", "G", "V", "GF", "GA", "GD", "Pts"].map(h => (
+                  <th key={h} style={{ textAlign: "left", padding: "7px 8px", fontFamily: "Bangers, cursive", fontSize: 16, letterSpacing: 1, borderBottom: "2px solid " + G.line }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {competitionData.standings.map(row => {
+                const isGb = row.club === "Glory Boyz FC";
+                return (
+                  <tr key={row.club} style={{ background: isGb ? "rgba(79,159,224,0.14)" : "transparent", borderTop: "1px solid " + G.line }}>
+                    <td style={{ padding: "6px 8px", fontWeight: 800 }}>{row.pos}</td>
+                    <td style={{ padding: "6px 8px", fontWeight: isGb ? 800 : 600 }}>{row.club}</td>
+                    <td style={{ padding: "6px 8px" }}>{row.played}</td>
+                    <td style={{ padding: "6px 8px" }}>{row.won}</td>
+                    <td style={{ padding: "6px 8px" }}>{row.drawn}</td>
+                    <td style={{ padding: "6px 8px" }}>{row.lost}</td>
+                    <td style={{ padding: "6px 8px" }}>{row.gf}</td>
+                    <td style={{ padding: "6px 8px" }}>{row.ga}</td>
+                    <td style={{ padding: "6px 8px" }}>{row.gd}</td>
+                    <td style={{ padding: "6px 8px", fontWeight: 800 }}>{row.points}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Panel>}
+
+      {competitionUnlocked && <Panel title="LAATSTE SPEELRONDE" color={G.red} icon="🔥">
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ fontSize: 12, color: "#b7c6de", marginBottom: 2 }}>
+            Laatste ronde: <strong>{competitionData.lastRoundLabel}</strong>
+          </div>
+          {competitionData.lastRoundResults.map((r, i) => {
+            return (
+              <Card key={r.date + i} style={{ padding: "10px 12px", background: G.paperSoft }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                  <div style={{ fontFamily: "Bangers, cursive", fontSize: 18, letterSpacing: 0.8, fontWeight: 500 }}>
+                    {r.home} {r.homeScore} - {r.awayScore} {r.away}
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      </Panel>}
     </div>
   );
 }
