@@ -883,6 +883,7 @@ export default function App() {
               players={players} setView={setView} setActivePlayer={setActivePlayer}
               avail={avail} sched={sched} matchDates={matchDates} playerStats={playerStats}
               onPlayerTileClick={handlePlayerTileClick}
+              competitionData={competitionData}
             />
           )}
           {view === "roster" && (
@@ -930,7 +931,7 @@ export default function App() {
 }
 
 // ── HOME VIEW ─────────────────────────────────────────────────────────────────
-function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick }) {
+function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData }) {
   const comicTileGradients = [
     "linear-gradient(160deg, #57b8ff, #318fdb)",
     "linear-gradient(160deg, #ffb347, #f48a1f)",
@@ -949,9 +950,27 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
     .map(p => ({ ...p, value: playerStats[p.id]?.assists || 0 }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 3);
+  const nextClubMatch = competitionData?.nextGames?.find(
+    m => m.home === "Glory Boyz FC" || m.away === "Glory Boyz FC"
+  );
+  const nextOpponent = nextClubMatch
+    ? (nextClubMatch.home === "Glory Boyz FC" ? nextClubMatch.away : nextClubMatch.home)
+    : null;
 
   return (
     <div>
+      {nextClubMatch && (
+        <Panel title="AANKOMENDE WEDSTRIJD" color={G.green} icon="📅">
+          <Card style={{ padding:"12px 14px", background:G.paperSoft, boxShadow:"none" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+              <div style={{ fontFamily:"Bangers, cursive", fontSize:24, letterSpacing:0.8 }}>
+                Glory Boyz FC <span style={{ fontWeight:700 }}>VS</span> {nextOpponent}
+              </div>
+              <Tag bg={G.green}>{nextClubMatch.date} {nextClubMatch.time}</Tag>
+            </div>
+          </Card>
+        </Panel>
+      )}
       <Panel title="WIE BEN JIJ?" color={G.blue} icon="👤">
         <div className="home-player-grid">
           {players.map((p, i) => {
@@ -1252,31 +1271,6 @@ function CompetitionView({ competitionData, competitionUnlocked, competitionStar
               </div>
             </Card>
           ))}
-          <div style={{ marginTop:8, display:"flex", justifyContent:"flex-end" }}>
-            <Btn
-              small
-              bg={G.blue}
-              onClick={() => {
-                const lines = competitionData.nextGames.map(
-                  g => `${g.date} ${g.time} - ${g.home} vs ${g.away}`
-                );
-                const text = `Volgende wedstrijden (Powerleague):\n` + lines.join("\n");
-                if (navigator.clipboard?.writeText) {
-                  navigator.clipboard.writeText(text);
-                } else {
-                  const textarea = document.createElement("textarea");
-                  textarea.value = text;
-                  document.body.appendChild(textarea);
-                  textarea.select();
-                  document.execCommand("copy");
-                  document.body.removeChild(textarea);
-                }
-                alert("Volgende wedstrijden gekopieerd. Plak ze in je teamchat.");
-              }}
-            >
-              📋 DEEL VOLGENDE WEDSTRIJDEN
-            </Btn>
-          </div>
         </div>
       </Panel>}
 
