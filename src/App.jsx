@@ -486,7 +486,7 @@ export default function App() {
   const [playerStats, setPlayerStats] = useState({});
   const [comicBursts, setComicBursts] = useState([]);
   const [competitionData, setCompetitionData] = useState(COMPETITION_INFO);
-   const [competitionTestMode, setCompetitionTestMode] = useState(false);
+  const [competitionTestMode, setCompetitionTestMode] = useState(false);
 
   function showFloat(text, color) {
     setFloatText({ text, color });
@@ -756,7 +756,6 @@ export default function App() {
     { id: "home",   label: "SPELERS", icon: "" },
     { id: "roster", label: "ROOSTER", icon: "" },
     { id: "competition", label: "COMPETITIE", icon: "" },
-    { id: "admin",  label: "ADMIN",   icon: "" },
   ];
 
   if (loading) return <><style>{css}</style><LoadingScreen /></>;
@@ -823,7 +822,8 @@ export default function App() {
           </header>
 
           {/* NAV */}
-          <div style={{ display:"flex", gap:8, marginBottom:24, justifyContent:"center", flexWrap:"wrap" }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:4, marginBottom:24 }}>
+            <div style={{ display:"flex", gap:8, justifyContent:"center", flexWrap:"wrap" }}>
             {navItems.map(n => {
               const isAdminBtn = n.id === "admin";
               const isActive = view === n.id || (n.id === "admin" && view === "adminlogin");
@@ -857,6 +857,24 @@ export default function App() {
                 </span>
               </button>
             )}
+            </div>
+            <div style={{ display:"flex", justifyContent:"flex-end" }}>
+              <button
+                onClick={() => handleNavClick("admin")}
+                style={{
+                  background:"transparent",
+                  border:"none",
+                  padding:0,
+                  fontSize:11,
+                  color:"#6c7b96",
+                  textDecoration:"underline",
+                  cursor:"pointer",
+                  opacity:0.7,
+                }}
+              >
+                admin
+              </button>
+            </div>
           </div>
 
           {/* VIEWS */}
@@ -901,6 +919,8 @@ export default function App() {
               swapReq={swapReq} startSwap={startSwap} sendSwap={sendSwap}
               myOffers={myOffers} acceptSwap={acceptSwap} declineSwap={declineSwap}
               playerStats={playerStats}
+              competitionData={competitionData}
+              competitionUnlocked={competitionUnlocked}
             />
           )}
         </div>
@@ -1232,6 +1252,31 @@ function CompetitionView({ competitionData, competitionUnlocked, competitionStar
               </div>
             </Card>
           ))}
+          <div style={{ marginTop:8, display:"flex", justifyContent:"flex-end" }}>
+            <Btn
+              small
+              bg={G.blue}
+              onClick={() => {
+                const lines = competitionData.nextGames.map(
+                  g => `${g.date} ${g.time} - ${g.home} vs ${g.away}`
+                );
+                const text = `Volgende wedstrijden (Powerleague):\n` + lines.join("\n");
+                if (navigator.clipboard?.writeText) {
+                  navigator.clipboard.writeText(text);
+                } else {
+                  const textarea = document.createElement("textarea");
+                  textarea.value = text;
+                  document.body.appendChild(textarea);
+                  textarea.select();
+                  document.execCommand("copy");
+                  document.body.removeChild(textarea);
+                }
+                alert("Volgende wedstrijden gekopieerd. Plak ze in je teamchat.");
+              }}
+            >
+              📋 DEEL VOLGENDE WEDSTRIJDEN
+            </Btn>
+          </div>
         </div>
       </Panel>}
 
@@ -1496,12 +1541,19 @@ function DatesView({ matchDates, saveMatchDates, genSchedule }) {
 }
 
 // ── PLAYER VIEW ───────────────────────────────────────────────────────────────
-function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, mySchedule, swapReq, startSwap, sendSwap, myOffers, acceptSwap, declineSwap, playerStats }) {
+function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, mySchedule, swapReq, startSwap, sendSwap, myOffers, acceptSwap, declineSwap, playerStats, competitionData, competitionUnlocked }) {
   const schedule = mySchedule(player.id);
   const playCount = schedule.filter(d => d.playing).length;
   const skipCount = schedule.filter(d => !d.playing).length;
   const goals = playerStats[player.id]?.goals || 0;
   const assists = playerStats[player.id]?.assists || 0;
+
+  let nextClubMatch = null;
+  if (competitionUnlocked && competitionData?.nextGames?.length) {
+    nextClubMatch = competitionData.nextGames.find(
+      m => m.home === "Glory Boyz FC" || m.away === "Glory Boyz FC"
+    ) || null;
+  }
 
   return (
     <div>
@@ -1510,6 +1562,14 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
           <div style={{ display:"flex", flexDirection:"column", justifyContent:"center", gap:6 }}>
             <div style={{ fontFamily:"Bangers, cursive", fontSize:26, letterSpacing:1, lineHeight:1 }}>{player.name.toUpperCase()}</div>
             <div style={{ fontSize:12, color:"#b9c6de", textTransform:"uppercase", letterSpacing:2, fontWeight:700 }}>{player.role}</div>
+            {nextClubMatch && (
+              <div style={{ marginTop:4 }}>
+                <Tag bg={G.green}>
+                  Volgende wedstrijd: {nextClubMatch.date.slice(0,5)} – {nextClubMatch.time} vs{" "}
+                  {nextClubMatch.home === "Glory Boyz FC" ? nextClubMatch.away : nextClubMatch.home}
+                </Tag>
+              </div>
+            )}
           </div>
           <div className="player-stats-grid">
             <Card color={G.green} style={{ padding:"10px 14px", textAlign:"center", background:"rgba(63,218,139,0.18)", boxShadow:"0 8px 16px rgba(63,218,139,0.20)", borderColor:G.green }} className="player-stat-card">
@@ -1705,6 +1765,9 @@ function PlayersAdmin({ players, addPlayer, removePlayer, savePlayerName, player
             )}
             <span style={{ fontSize:10, color:G.brown, textTransform:"uppercase", letterSpacing:1 }}>{p.role}</span>
             <div className="players-admin-stats">
+              <span style={{ fontSize:11, color:"#d0dccf", fontWeight:700, marginRight:4 }}>
+                G+A: {(playerStats[p.id]?.goals ?? 0) + (playerStats[p.id]?.assists ?? 0)}
+              </span>
               <label style={{ fontSize:10, color:"#b7c5dd", fontWeight:700 }}>G</label>
               <input
                 type="number"
