@@ -73,6 +73,15 @@ function fmtDate(d) {
   });
 }
 
+function getThursdayRoundKey(baseDate = new Date()) {
+  const d = new Date(baseDate);
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay(); // 0=Sun, 4=Thu
+  const diffSinceThursday = (day - 4 + 7) % 7;
+  d.setDate(d.getDate() - diffSinceThursday);
+  return d.toISOString().slice(0, 10);
+}
+
 // ── SCHEDULING ────────────────────────────────────────────────────────────────
 function buildSchedule(players, availability, matchDates) {
   const field = players.filter(p => p.role === "veld");
@@ -487,6 +496,14 @@ export default function App() {
   const [comicBursts, setComicBursts] = useState([]);
   const [competitionData, setCompetitionData] = useState(COMPETITION_INFO);
   const [competitionTestMode, setCompetitionTestMode] = useState(false);
+  const [motmVotes, setMotmVotes] = useState(() => {
+    try {
+      const raw = localStorage.getItem("motmVotesByRound");
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
 
   function showFloat(text, color) {
     setFloatText({ text, color });
@@ -508,11 +525,40 @@ export default function App() {
     notify("Competitiedata ververst!");
   }
 
+  function castMotmVote(voterId, targetId) {
+    if (!voterId || !targetId || voterId === targetId) return;
+    const roundKey = getThursdayRoundKey();
+    setMotmVotes(prev => ({
+      ...prev,
+      [roundKey]: {
+        ...(prev[roundKey] || {}),
+        [voterId]: targetId,
+      },
+    }));
+    notify("MOTM stem opgeslagen!");
+  }
+
   const competitionUnlocked = new Date() >= new Date(COMPETITION_START_DATE + "T00:00:00") || (adminUnlocked && competitionTestMode);
+  const motmRoundKey = getThursdayRoundKey();
+  const motmVotesForRound = motmVotes[motmRoundKey] || {};
+  const motmCountMap = Object.values(motmVotesForRound).reduce((acc, targetId) => {
+    acc[targetId] = (acc[targetId] || 0) + 1;
+    return acc;
+  }, {});
+  const motmWinnerId = Object.keys(motmCountMap).sort((a, b) => motmCountMap[b] - motmCountMap[a])[0];
+  const motmWinner = players.find(p => String(p.id) === String(motmWinnerId)) || null;
 
   function toggleCompetitionTestMode() {
     setCompetitionTestMode(prev => !prev);
   }
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("motmVotesByRound", JSON.stringify(motmVotes));
+    } catch {
+      // Ignore write errors in private mode/storage-blocked contexts.
+    }
+  }, [motmVotes]);
 
   function showComicBurst(words = ["BAM"]) {
     const burstId = Date.now() + Math.random();
@@ -884,6 +930,11 @@ export default function App() {
               avail={avail} sched={sched} matchDates={matchDates} playerStats={playerStats}
               onPlayerTileClick={handlePlayerTileClick}
               competitionData={competitionData}
+              motmRoundKey={motmRoundKey}
+              motmVotesForRound={motmVotesForRound}
+              motmWinner={motmWinner}
+              motmWinnerVotes={motmWinnerId ? motmCountMap[motmWinnerId] : 0}
+              onCastMotmVote={castMotmVote}
             />
           )}
           {view === "roster" && (
@@ -931,7 +982,8 @@ export default function App() {
 }
 
 // ── HOME VIEW ─────────────────────────────────────────────────────────────────
-function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData }) {
+function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData, motmRoundKey, motmVotesForRound, motmWinner, motmWinnerVotes, onCastMotmVote }) {
+  const [motmPickerFor, setMotmPickerFor] = useState(null);
   const comicTileGradients = [
     "linear-gradient(160deg, #57b8ff, #318fdb)",
     "linear-gradient(160deg, #ffb347, #f48a1f)",
@@ -975,31 +1027,83 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
         <div className="home-player-grid">
           {players.map((p, i) => {
             const tileBg = comicTileGradients[i % comicTileGradients.length];
-            const roleColor = "rgba(255, 255, 255, 0.9)";
             return (
-            <button key={p.id} onClick={() => { onPlayerTileClick?.(p); setActivePlayer(p); setView("player"); }} className="card-hover btn-press anim-slidein comic-tile" style={{ animationDelay:(i*0.06)+"s",
-              background: tileBg, border:"2px solid #0d1118", borderRadius:14,
-              boxShadow:"0 10px 20px rgba(0,0,0,0.30), 3px 3px 0 #0d1118", padding:"12px 8px", cursor:"pointer",
-              display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6,
-              aspectRatio:"1 / 1",
-            }}>
-              <span style={{
-                display:"inline-flex", alignItems:"center", justifyContent:"center",
-                minWidth:62, height:30, padding:"0 9px",
-                border:"2px solid #0d1118", borderRadius:999,
-                background:"rgba(255,255,255,0.35)",
-                fontFamily:"Bangers, cursive", fontSize:15, letterSpacing:0.6, color:"#0d1118",
-                boxShadow:"2px 2px 0 #0d1118"
-              }}>{p.role === "keeper" ? "KEEPER" : "VELD"}</span>
-              <span style={{
-                fontFamily:"Bangers, cursive", fontSize:29, letterSpacing:0.6, lineHeight:1,
-                textAlign:"center", color:"#f9fbff", textShadow:"0 2px 6px rgba(0,0,0,0.35)"
-              }}>{p.name}</span>
-            </button>
+            <div key={p.id} style={{ position:"relative" }}>
+              <button onClick={() => { onPlayerTileClick?.(p); setMotmPickerFor(p.id); }} className="card-hover btn-press anim-slidein comic-tile" style={{ animationDelay:(i*0.06)+"s",
+                background: tileBg, border:"2px solid #0d1118", borderRadius:14,
+                boxShadow:"0 10px 20px rgba(0,0,0,0.30), 3px 3px 0 #0d1118", padding:"12px 8px", cursor:"pointer",
+                display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6,
+                aspectRatio:"1 / 1",
+              }}>
+                <span style={{
+                  display:"inline-flex", alignItems:"center", justifyContent:"center",
+                  minWidth:62, height:30, padding:"0 9px",
+                  border:"2px solid #0d1118", borderRadius:999,
+                  background:"rgba(255,255,255,0.35)",
+                  fontFamily:"Bangers, cursive", fontSize:15, letterSpacing:0.6, color:"#0d1118",
+                  boxShadow:"2px 2px 0 #0d1118"
+                }}>{p.role === "keeper" ? "KEEPER" : "VELD"}</span>
+                <span style={{
+                  fontFamily:"Bangers, cursive", fontSize:29, letterSpacing:0.6, lineHeight:1,
+                  textAlign:"center", color:"#f9fbff", textShadow:"0 2px 6px rgba(0,0,0,0.35)"
+                }}>{p.name}</span>
+              </button>
+            </div>
             );
           })}
         </div>
       </Panel>
+
+      {motmPickerFor && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+          <Card style={{ width:"min(520px, 100%)", padding:"14px 16px", background:G.paper }}>
+            <div style={{ fontFamily:"Bangers, cursive", fontSize:24, letterSpacing:1, marginBottom:10 }}>MAN OF THE MATCH STEMMEN</div>
+            <p style={{ fontSize:13, color:"#c8d5ea", marginBottom:10 }}>
+              Wie was de man of the match voor speler{" "}
+              <strong>{players.find(p => p.id === motmPickerFor)?.name}</strong>?
+            </p>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:8 }}>
+              {players.filter(p => p.id !== motmPickerFor).map(candidate => (
+                <button
+                  key={candidate.id}
+                  onClick={() => {
+                    onCastMotmVote(motmPickerFor, candidate.id);
+                    setMotmPickerFor(null);
+                  }}
+                  style={{
+                    border:"1.5px solid "+G.line,
+                    borderRadius:8,
+                    background:G.paperSoft,
+                    color:G.ink,
+                    padding:"8px 10px",
+                    cursor:"pointer",
+                    textAlign:"left",
+                  }}
+                >
+                  {candidate.name}
+                </button>
+              ))}
+            </div>
+            <div style={{ display:"flex", justifyContent:"flex-end", gap:8, marginTop:12, flexWrap:"wrap" }}>
+              <Btn
+                small
+                bg={G.blue}
+                onClick={() => {
+                  const selected = players.find(p => p.id === motmPickerFor);
+                  setMotmPickerFor(null);
+                  if (selected) {
+                    setActivePlayer(selected);
+                    setView("player");
+                  }
+                }}
+              >
+                NAAR PROFIEL
+              </Btn>
+              <Btn small outline onClick={() => setMotmPickerFor(null)}>SLUITEN</Btn>
+            </div>
+          </Card>
+        </div>
+      )}
 
       <Panel title="BESCHIKBAARHEID" color={G.red} icon="🗓️">
         <Card style={{ padding:"12px 14px", background:G.paperSoft, boxShadow:"none" }}>
@@ -1039,6 +1143,14 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
           </Card>
         </div>
       </Panel>
+      <div style={{ marginTop:8, opacity:0.78 }}>
+        <Card style={{ padding:"8px 10px", background:"rgba(255,255,255,0.04)", boxShadow:"none" }}>
+          <div style={{ fontSize:12, color:"#b7c6de" }}>
+            <strong>Man of the Match</strong> ({fmtDate(motmRoundKey)}):{" "}
+            {motmWinner ? `${motmWinner.name} (${motmWinnerVotes} stem${motmWinnerVotes === 1 ? "" : "men"})` : "nog geen stemmen"}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
