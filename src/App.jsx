@@ -942,11 +942,6 @@ export default function App() {
               avail={avail} sched={sched} matchDates={matchDates} playerStats={playerStats}
               onPlayerTileClick={handlePlayerTileClick}
               competitionData={competitionData}
-              motmRoundKey={motmRoundKey}
-              motmVotesForRound={motmVotesForRound}
-              motmWinner={motmWinner}
-              motmWinnerVotes={motmWinnerId ? motmCountMap[motmWinnerId] : 0}
-              onCastMotmVote={castMotmVote}
             />
           )}
           {view === "roster" && (
@@ -985,6 +980,11 @@ export default function App() {
               playerStats={playerStats}
               competitionData={competitionData}
               competitionUnlocked={competitionUnlocked}
+              motmRoundKey={motmRoundKey}
+              motmVotesForRound={motmVotesForRound}
+              motmWinner={motmWinner}
+              motmWinnerVotes={motmWinnerId ? motmCountMap[motmWinnerId] : 0}
+              onCastMotmVote={castMotmVote}
             />
           )}
         </div>
@@ -994,8 +994,7 @@ export default function App() {
 }
 
 // ── HOME VIEW ─────────────────────────────────────────────────────────────────
-function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData, motmRoundKey, motmVotesForRound, motmWinner, motmWinnerVotes, onCastMotmVote }) {
-  const [motmPickerFor, setMotmPickerFor] = useState(null);
+function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData }) {
   const comicTileGradients = [
     "linear-gradient(160deg, #57b8ff, #318fdb)",
     "linear-gradient(160deg, #ffb347, #f48a1f)",
@@ -1041,7 +1040,7 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
             const tileBg = comicTileGradients[i % comicTileGradients.length];
             return (
             <div key={p.id} style={{ position:"relative" }}>
-              <button onClick={() => { onPlayerTileClick?.(p); setMotmPickerFor(p.id); }} className="card-hover btn-press anim-slidein comic-tile" style={{ animationDelay:(i*0.06)+"s",
+              <button onClick={() => { onPlayerTileClick?.(p); setActivePlayer(p); setView("player"); }} className="card-hover btn-press anim-slidein comic-tile" style={{ animationDelay:(i*0.06)+"s",
                 background: tileBg, border:"2px solid #0d1118", borderRadius:14,
                 boxShadow:"0 10px 20px rgba(0,0,0,0.30), 3px 3px 0 #0d1118", padding:"12px 8px", cursor:"pointer",
                 display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6,
@@ -1065,57 +1064,6 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
           })}
         </div>
       </Panel>
-
-      {motmPickerFor && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-          <Card style={{ width:"min(520px, 100%)", padding:"14px 16px", background:G.paper }}>
-            <div style={{ fontFamily:"Bangers, cursive", fontSize:24, letterSpacing:1, marginBottom:10 }}>MAN OF THE MATCH STEMMEN</div>
-            <p style={{ fontSize:13, color:"#c8d5ea", marginBottom:10 }}>
-              Wie was de man of the match voor speler{" "}
-              <strong>{players.find(p => p.id === motmPickerFor)?.name}</strong>?
-            </p>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:8 }}>
-              {players.filter(p => p.id !== motmPickerFor).map(candidate => (
-                <button
-                  key={candidate.id}
-                  onClick={() => {
-                    onCastMotmVote(motmPickerFor, candidate.id);
-                    setMotmPickerFor(null);
-                  }}
-                  style={{
-                    border:"1.5px solid "+G.line,
-                    borderRadius:8,
-                    background:G.paperSoft,
-                    color:G.ink,
-                    padding:"8px 10px",
-                    cursor:"pointer",
-                    textAlign:"left",
-                  }}
-                >
-                  {candidate.name}
-                </button>
-              ))}
-            </div>
-            <div style={{ display:"flex", justifyContent:"flex-end", gap:8, marginTop:12, flexWrap:"wrap" }}>
-              <Btn
-                small
-                bg={G.blue}
-                onClick={() => {
-                  const selected = players.find(p => p.id === motmPickerFor);
-                  setMotmPickerFor(null);
-                  if (selected) {
-                    setActivePlayer(selected);
-                    setView("player");
-                  }
-                }}
-              >
-                NAAR PROFIEL
-              </Btn>
-              <Btn small outline onClick={() => setMotmPickerFor(null)}>SLUITEN</Btn>
-            </div>
-          </Card>
-        </div>
-      )}
 
       <Panel title="BESCHIKBAARHEID" color={G.red} icon="🗓️">
         <Card style={{ padding:"12px 14px", background:G.paperSoft, boxShadow:"none" }}>
@@ -1155,14 +1103,6 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
           </Card>
         </div>
       </Panel>
-      <div style={{ marginTop:8, opacity:0.78 }}>
-        <Card style={{ padding:"8px 10px", background:"rgba(255,255,255,0.04)", boxShadow:"none" }}>
-          <div style={{ fontSize:12, color:"#b7c6de" }}>
-            <strong>Man of the Match</strong> ({fmtDate(motmRoundKey)}):{" "}
-            {motmWinner ? `${motmWinner.name} (${motmWinnerVotes} stem${motmWinnerVotes === 1 ? "" : "men"})` : "nog geen stemmen"}
-          </div>
-        </Card>
-      </div>
     </div>
   );
 }
@@ -1659,12 +1599,13 @@ function DatesView({ matchDates, saveMatchDates, genSchedule }) {
 }
 
 // ── PLAYER VIEW ───────────────────────────────────────────────────────────────
-function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, mySchedule, swapReq, startSwap, sendSwap, myOffers, acceptSwap, declineSwap, playerStats, competitionData, competitionUnlocked }) {
+function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, mySchedule, swapReq, startSwap, sendSwap, myOffers, acceptSwap, declineSwap, playerStats, competitionData, competitionUnlocked, motmRoundKey, motmVotesForRound, motmWinner, motmWinnerVotes, onCastMotmVote }) {
   const schedule = mySchedule(player.id);
   const playCount = schedule.filter(d => d.playing).length;
   const skipCount = schedule.filter(d => !d.playing).length;
   const goals = playerStats[player.id]?.goals || 0;
   const assists = playerStats[player.id]?.assists || 0;
+  const [motmChoice, setMotmChoice] = useState("");
 
   let nextClubMatch = null;
   if (competitionUnlocked && competitionData?.nextGames?.length) {
@@ -1827,6 +1768,43 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
           })}
         </div>
       </Panel>
+
+      <Card style={{ padding:"10px 12px", marginTop:10, background:"rgba(255,255,255,0.04)", boxShadow:"none" }}>
+        <div style={{ fontSize:12, color:"#b7c6de", marginBottom:8 }}>
+          <strong>Man of the Match</strong> ({fmtDate(motmRoundKey)}):{" "}
+          {motmWinner ? `${motmWinner.name} (${motmWinnerVotes} stem${motmWinnerVotes === 1 ? "" : "men"})` : "nog geen stemmen"}
+        </div>
+        <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+          <span style={{ fontSize:11, color:"#8fa3c2" }}>Optioneel:</span>
+          <select
+            value={motmChoice}
+            onChange={e => setMotmChoice(e.target.value)}
+            style={{ border:"1.5px solid "+G.line, borderRadius:8, background:G.paperSoft, color:G.ink, padding:"6px 8px", fontSize:12, minWidth:180 }}
+          >
+            <option value="">Kies MOTM...</option>
+            {players.filter(p => p.id !== player.id).map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <Btn
+            small
+            bg={G.blue}
+            disabled={!motmChoice}
+            onClick={() => {
+              if (!motmChoice) return;
+              onCastMotmVote(player.id, Number(motmChoice));
+              setMotmChoice("");
+            }}
+          >
+            STEMMEN
+          </Btn>
+          {motmVotesForRound[player.id] && (
+            <span style={{ fontSize:11, color:"#9fd0ff" }}>
+              Jouw stem: {players.find(p => String(p.id) === String(motmVotesForRound[player.id]))?.name || "onbekend"}
+            </span>
+          )}
+        </div>
+      </Card>
     </div>
   );
 }
