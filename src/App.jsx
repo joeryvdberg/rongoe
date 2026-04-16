@@ -1203,7 +1203,7 @@ function CompetitionView({ competitionData, competitionUnlocked, competitionStar
                 <Tag bg={G.blue}>Positie #{gb.pos}</Tag>
                 <Tag bg={G.green}>Punten {gb.points}</Tag>
                 <Tag bg={G.orange}>Doelsaldo {gb.gd}</Tag>
-                <Tag bg={G.red}>W-V-G: {gb.won}-{gb.lost}-{gb.drawn}</Tag>
+                <Tag bg={G.red}>W-G-V: {gb.won}-{gb.drawn}-{gb.lost}</Tag>
               </div>
               {(gb.pos === 1 || gb.pos === 8) && (
                 <div style={{ marginTop: 4 }}>
@@ -1223,7 +1223,11 @@ function CompetitionView({ competitionData, competitionUnlocked, competitionStar
           {competitionData.nextGames.map((m, i) => (
             <Card key={m.date + m.time + i} style={{ padding: "10px 12px", background: G.paperSoft }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-                <div style={{ fontFamily: "Bangers, cursive", fontSize: 18, letterSpacing: 0.8, fontWeight: 500 }}>{m.home} vs {m.away}</div>
+                <div style={{ fontFamily: "Bangers, cursive", fontSize: 18, letterSpacing: 0.6, fontWeight: 500, lineHeight: 1.3 }}>
+                  <span style={{ fontWeight: 500 }}>{m.home}</span>
+                  <span style={{ fontWeight: 700 }}> VS </span>
+                  <span style={{ fontWeight: 500 }}>{m.away}</span>
+                </div>
                 <Tag bg={G.green}>{m.date} {m.time}</Tag>
               </div>
             </Card>
@@ -1273,8 +1277,10 @@ function CompetitionView({ competitionData, competitionUnlocked, competitionStar
             return (
               <Card key={r.date + i} style={{ padding: "10px 12px", background: G.paperSoft }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                  <div style={{ fontFamily: "Bangers, cursive", fontSize: 18, letterSpacing: 0.8, fontWeight: 500 }}>
-                    {r.home} {r.homeScore} - {r.awayScore} {r.away}
+                  <div style={{ fontFamily: "Bangers, cursive", fontSize: 18, letterSpacing: 0.6, lineHeight: 1.3 }}>
+                    <span style={{ fontWeight: 500 }}>{r.home}</span>
+                    <span style={{ fontWeight: 700 }}> {r.homeScore} - {r.awayScore} </span>
+                    <span style={{ fontWeight: 500 }}>{r.away}</span>
                   </div>
                 </div>
               </Card>
