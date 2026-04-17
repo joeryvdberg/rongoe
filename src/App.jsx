@@ -1251,6 +1251,12 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
   const nextOpponent = nextClubMatch
     ? (nextClubMatch.home === "Glory Boyz FC" ? nextClubMatch.away : nextClubMatch.home)
     : null;
+  const lastGbResult = competitionData?.lastRoundResults?.find(
+    r => r.home === "Glory Boyz FC" || r.away === "Glory Boyz FC"
+  );
+  const motmOpponent = lastGbResult
+    ? (lastGbResult.home === "Glory Boyz FC" ? lastGbResult.away : lastGbResult.home)
+    : null;
 
   return (
     <div>
@@ -1341,7 +1347,7 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:10 }}>
           <Card color={G.green} style={{ padding:"12px 14px", background:"linear-gradient(160deg, rgba(67,185,123,0.24), rgba(67,185,123,0.10))" }}>
             <div style={{ fontSize:11, letterSpacing:1.2, textTransform:"uppercase", color:"#d8ffe9", fontWeight:800 }}>
-              Man of the Match ({motmWeekLabel})
+              {motmOpponent ? `Man of the Match vs ${motmOpponent}` : `Man of the Match (${motmWeekLabel})`}
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:4, marginTop:8 }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:"rgba(0,0,0,0.14)", border:"1px solid rgba(255,255,255,0.18)", borderRadius:8, padding:"6px 8px" }}>
