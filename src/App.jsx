@@ -1838,6 +1838,30 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
   const goals = playerStats[player.id]?.goals || 0;
   const assists = playerStats[player.id]?.assists || 0;
   const [motmChoice, setMotmChoice] = useState("");
+  const motmRoundDateKey = (() => {
+    const label = competitionData?.lastRoundLabel;
+    if (!label) return null;
+    const [dd, mm, yyyy] = label.split("/");
+    if (!dd || !mm || !yyyy) return null;
+    return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+  })();
+  const motmRoundEntry = motmRoundDateKey && sched ? sched[motmRoundDateKey] : null;
+  const motmEligibleIds = new Set(
+    motmRoundEntry
+      ? [motmRoundEntry.keeper, ...(motmRoundEntry.players || [])].filter(Boolean).map(p => p.id)
+      : []
+  );
+  const motmVotingLockedToRoster = !!motmRoundEntry;
+  const motmEligiblePlayers = players.filter(p =>
+    p.id !== player.id && (motmVotingLockedToRoster ? motmEligibleIds.has(p.id) : true)
+  );
+
+  useEffect(() => {
+    if (!motmChoice) return;
+    if (!motmEligiblePlayers.some(p => String(p.id) === String(motmChoice))) {
+      setMotmChoice("");
+    }
+  }, [motmChoice, motmEligiblePlayers]);
 
   let nextClubMatch = null;
   if (competitionUnlocked && competitionData?.nextGames?.length) {
@@ -2010,6 +2034,11 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
           <div style={{ fontSize:11, color:"#9fb2ce", marginBottom:8 }}>
             MVP stand: {motmSeasonLeader ? `${motmSeasonLeader.name} (${motmSeasonLeaderWins}x MOTM)` : "nog geen leider"}
           </div>
+          <div style={{ fontSize:11, color:"#9fb2ce", marginBottom:8 }}>
+            {motmVotingLockedToRoster
+              ? `Stemmen op basis van rooster op ${competitionData?.lastRoundLabel || "laatste speelronde"}.`
+              : "Geen rooster voor deze datum: stemmen op alle spelers is toegestaan."}
+          </div>
           <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
             <span style={{ fontSize:11, color:"#8fa3c2" }}>Optioneel:</span>
             <select
@@ -2018,7 +2047,7 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
               style={{ border:"1.5px solid "+G.line, borderRadius:8, background:G.paperSoft, color:G.ink, padding:"6px 8px", fontSize:12, minWidth:180 }}
             >
               <option value="">Kies MOTM...</option>
-              {players.filter(p => p.id !== player.id).map(p => (
+              {motmEligiblePlayers.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
