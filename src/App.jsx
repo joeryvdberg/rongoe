@@ -123,7 +123,7 @@ function parseCompetitionSnapshot(snapshot) {
   const fixtureTimes = lines
     .filter(line => /^\|\s*\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}\s*\|$/.test(line))
     .map(line => line.replace(/\|/g, "").trim());
-  const nextGames = fixtureVsLines.slice(0, 8).map((line, i) => {
+  const nextGamesRaw = fixtureVsLines.slice(0, 12).map((line, i) => {
     const compact = stripActionNoise(line);
     const pair = extractTeamPairFromLine(compact, knownTeams);
     if (!pair) return null;
@@ -136,6 +136,16 @@ function parseCompetitionSnapshot(snapshot) {
       away: pair[1],
     };
   }).filter(Boolean);
+  const nextGamesSeen = new Set();
+  const nextGames = nextGamesRaw
+    .filter(m => m.date && m.time && m.home && m.away)
+    .filter(m => {
+      const key = `${m.date}|${m.time}|${m.home}|${m.away}`;
+      if (nextGamesSeen.has(key)) return false;
+      nextGamesSeen.add(key);
+      return true;
+    })
+    .slice(0, 8);
 
   const resultRegex = /\b(\d+)\s+(\d+)\b/;
   const seen = new Set();
@@ -669,7 +679,7 @@ export default function App() {
     }
   }
 
-  async function refreshCompetitionData() {
+  async function refreshCompetitionData({ silent = false } = {}) {
     if (competitionRefreshing) return;
     setCompetitionRefreshing(true);
     try {
@@ -685,14 +695,19 @@ export default function App() {
         lastRoundResults: parsed.lastRoundResults.length ? parsed.lastRoundResults : prev.lastRoundResults,
         updatedLabel: "Live ververst op " + refreshedAt,
       }));
-      notify("Competitiedata live ververst!");
+      if (!silent) notify("Competitiedata live ververst!");
     } catch (err) {
       console.error("Competition refresh error:", err);
-      notify("Verversen mislukt. Probeer het zo opnieuw.", true);
+      if (!silent) notify("Verversen mislukt. Probeer het zo opnieuw.", true);
     } finally {
       setCompetitionRefreshing(false);
     }
   }
+
+  useEffect(() => {
+    refreshCompetitionData({ silent: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function castMotmVote(voterId, targetId) {
     if (!voterId || !targetId || voterId === targetId) return;
