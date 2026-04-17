@@ -64,8 +64,6 @@ const COMPETITION_INFO = {
     { home: "Glory Boyz FC", homeScore: 4, awayScore: 7, away: "De Meer" },
   ],
 };
-const COMPETITION_START_DATE = "2026-05-07";
-
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function fmtDate(d) {
   return new Date(d + "T00:00:00").toLocaleDateString("nl-NL", {
@@ -80,6 +78,28 @@ function getThursdayRoundKey(baseDate = new Date()) {
   const diffSinceThursday = (day - 4 + 7) % 7;
   d.setDate(d.getDate() - diffSinceThursday);
   return d.toISOString().slice(0, 10);
+}
+
+function getRoundWinnerId(votesForRound = {}) {
+  const counts = {};
+  Object.values(votesForRound).forEach(targetId => {
+    counts[targetId] = (counts[targetId] || 0) + 1;
+  });
+  const winnerId = Object.keys(counts).sort((a, b) => {
+    const byVotes = counts[b] - counts[a];
+    if (byVotes !== 0) return byVotes;
+    return Number(a) - Number(b);
+  })[0];
+  return winnerId ? String(winnerId) : null;
+}
+
+function getMotmWeekLabel(roundKey) {
+  if (!roundKey) return "";
+  const start = new Date(roundKey + "T00:00:00");
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  const endKey = end.toISOString().slice(0, 10);
+  return `${fmtDate(roundKey)} t/m ${fmtDate(endKey)}`;
 }
 
 // ── SCHEDULING ────────────────────────────────────────────────────────────────
@@ -495,7 +515,6 @@ export default function App() {
   const [playerStats, setPlayerStats] = useState({});
   const [comicBursts, setComicBursts] = useState([]);
   const [competitionData, setCompetitionData] = useState(COMPETITION_INFO);
-  const [competitionTestMode, setCompetitionTestMode] = useState(false);
   const [motmVotes, setMotmVotes] = useState({});
 
   function showFloat(text, color) {
@@ -511,10 +530,10 @@ export default function App() {
 
   function refreshCompetitionData() {
     const refreshedAt = new Date().toLocaleString("nl-NL");
-    setCompetitionData({
-      ...COMPETITION_INFO,
+    setCompetitionData(prev => ({
+      ...prev,
       updatedLabel: "Handmatig ververst op " + refreshedAt,
-    });
+    }));
     notify("Competitiedata ververst!");
   }
 
@@ -544,8 +563,9 @@ export default function App() {
     notify("MOTM stem opgeslagen!");
   }
 
-  const competitionUnlocked = new Date() >= new Date(COMPETITION_START_DATE + "T00:00:00") || (adminUnlocked && competitionTestMode);
+  const competitionUnlocked = true;
   const motmRoundKey = getThursdayRoundKey();
+  const motmWeekLabel = getMotmWeekLabel(motmRoundKey);
   const motmVotesForRound = motmVotes[motmRoundKey] || {};
   const motmCountMap = Object.values(motmVotesForRound).reduce((acc, targetId) => {
     acc[targetId] = (acc[targetId] || 0) + 1;
@@ -553,10 +573,14 @@ export default function App() {
   }, {});
   const motmWinnerId = Object.keys(motmCountMap).sort((a, b) => motmCountMap[b] - motmCountMap[a])[0];
   const motmWinner = players.find(p => String(p.id) === String(motmWinnerId)) || null;
-
-  function toggleCompetitionTestMode() {
-    setCompetitionTestMode(prev => !prev);
-  }
+  const motmWinsByPlayer = Object.entries(motmVotes).reduce((acc, [, votesForRound]) => {
+    const winnerId = getRoundWinnerId(votesForRound);
+    if (!winnerId) return acc;
+    acc[winnerId] = (acc[winnerId] || 0) + 1;
+    return acc;
+  }, {});
+  const motmSeasonLeaderId = Object.keys(motmWinsByPlayer).sort((a, b) => motmWinsByPlayer[b] - motmWinsByPlayer[a])[0];
+  const motmSeasonLeader = players.find(p => String(p.id) === String(motmSeasonLeaderId)) || null;
 
   function showComicBurst(words = ["BAM"]) {
     const burstId = Date.now() + Math.random();
@@ -942,6 +966,11 @@ export default function App() {
               avail={avail} sched={sched} matchDates={matchDates} playerStats={playerStats}
               onPlayerTileClick={handlePlayerTileClick}
               competitionData={competitionData}
+              motmWeekLabel={motmWeekLabel}
+              motmWinner={motmWinner}
+              motmWinnerVotes={motmWinnerId ? motmCountMap[motmWinnerId] : 0}
+              motmSeasonLeader={motmSeasonLeader}
+              motmSeasonLeaderWins={motmSeasonLeaderId ? motmWinsByPlayer[motmSeasonLeaderId] : 0}
             />
           )}
           {view === "roster" && (
@@ -951,11 +980,7 @@ export default function App() {
             <CompetitionView
               competitionData={competitionData}
               competitionUnlocked={competitionUnlocked}
-              competitionStartDate={COMPETITION_START_DATE}
               refreshCompetitionData={refreshCompetitionData}
-              adminUnlocked={adminUnlocked}
-              competitionTestMode={competitionTestMode}
-              toggleCompetitionTestMode={toggleCompetitionTestMode}
             />
           )}
           {view === "adminlogin" && (
@@ -980,10 +1005,12 @@ export default function App() {
               playerStats={playerStats}
               competitionData={competitionData}
               competitionUnlocked={competitionUnlocked}
-              motmRoundKey={motmRoundKey}
+              motmWeekLabel={motmWeekLabel}
               motmVotesForRound={motmVotesForRound}
               motmWinner={motmWinner}
               motmWinnerVotes={motmWinnerId ? motmCountMap[motmWinnerId] : 0}
+              motmSeasonLeader={motmSeasonLeader}
+              motmSeasonLeaderWins={motmSeasonLeaderId ? motmWinsByPlayer[motmSeasonLeaderId] : 0}
               onCastMotmVote={castMotmVote}
             />
           )}
@@ -994,7 +1021,7 @@ export default function App() {
 }
 
 // ── HOME VIEW ─────────────────────────────────────────────────────────────────
-function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData }) {
+function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData, motmWeekLabel, motmWinner, motmWinnerVotes, motmSeasonLeader, motmSeasonLeaderWins }) {
   const comicTileGradients = [
     "linear-gradient(160deg, #57b8ff, #318fdb)",
     "linear-gradient(160deg, #ffb347, #f48a1f)",
@@ -1104,6 +1131,13 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
           </Card>
         </div>
       </Panel>
+
+      <Card style={{ padding:"8px 10px", marginTop:6, background:"rgba(255,255,255,0.04)", boxShadow:"none" }}>
+        <div style={{ fontSize:12, color:"#b7c6de", lineHeight:1.5 }}>
+          <strong>MOTM ({motmWeekLabel})</strong>: {motmWinner ? `${motmWinner.name} (${motmWinnerVotes} stem${motmWinnerVotes === 1 ? "" : "men"})` : "nog geen stemmen"} ·{" "}
+          <strong>MVP stand</strong>: {motmSeasonLeader ? `${motmSeasonLeader.name} (${motmSeasonLeaderWins}x MOTM)` : "nog geen leider"}
+        </div>
+      </Card>
     </div>
   );
 }
@@ -1230,34 +1264,17 @@ function RosterView({ players, sched, avail, matchDates }) {
 }
 
 // ── COMPETITION VIEW ──────────────────────────────────────────────────────────
-function CompetitionView({ competitionData, competitionUnlocked, competitionStartDate, refreshCompetitionData, adminUnlocked, competitionTestMode, toggleCompetitionTestMode }) {
+function CompetitionView({ competitionData, competitionUnlocked, refreshCompetitionData }) {
   const gb = competitionData.standings.find(t => t.club === "Glory Boyz FC");
-  const unlockDate = new Date(competitionStartDate + "T00:00:00").toLocaleDateString("nl-NL", { day: "2-digit", month: "2-digit", year: "numeric" });
-  const msLeft = new Date(competitionStartDate + "T00:00:00") - new Date();
-  const daysLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
-  const baseUnlocked = new Date() >= new Date(competitionStartDate + "T00:00:00");
-  const usingTestMode = competitionUnlocked && !baseUnlocked && adminUnlocked && competitionTestMode;
   return (
     <div>
       <Panel title="COMPETITIE INFO" color={G.blue} icon="🏆">
         <Card style={{ padding: "12px 14px", background: G.paperSoft, boxShadow: "none" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
-            <Tag bg={competitionUnlocked ? G.green : G.orange}>
-              {competitionUnlocked ? (usingTestMode ? "ADMIN TESTMODE" : "ACTIEF") : "BESCHIKBAAR VANAF " + unlockDate}
-            </Tag>
-            <Btn small bg={G.blue} onClick={refreshCompetitionData} disabled={!competitionUnlocked}>
+            <Tag bg={G.green}>ACTIEF</Tag>
+            <Btn small bg={G.blue} onClick={refreshCompetitionData}>
               🔄 VERVERS COMPETITIEDATA
             </Btn>
-            <label style={{ fontSize: 11, color: adminUnlocked ? "#b7c6de" : "#8d9bb3", display: "flex", alignItems: "center", gap: 4 }}>
-              <input
-                type="checkbox"
-                checked={competitionTestMode}
-                onChange={toggleCompetitionTestMode}
-                disabled={!adminUnlocked}
-                style={{ accentColor: G.gold }}
-              />
-              Admin testmode
-            </label>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
             <div><strong>League:</strong> {competitionData.leagueName}</div>
@@ -1270,34 +1287,8 @@ function CompetitionView({ competitionData, competitionUnlocked, competitionStar
           <div style={{ marginTop: 10, fontSize: 12, color: "#b7c6de" }}>
             {competitionData.updatedLabel} · bron: <a href={competitionData.sourceUrl} target="_blank" rel="noreferrer" style={{ color: "#9ec9f7" }}>Powerleague</a>
           </div>
-          {!competitionUnlocked && (
-            <div style={{ marginTop: 10, fontSize: 13, color: "#ffe0ab", fontWeight: 700 }}>
-              Competitiedata gaat live over {daysLeft} dag(en). Tot die tijd houden we deze tab in pre-season modus.
-            </div>
-          )}
-          {!adminUnlocked && (
-            <div style={{ marginTop: 8, fontSize: 12, color: "#9fb2ce" }}>
-              Log eerst in via de `ADMIN` tab om testmode te activeren.
-            </div>
-          )}
-          {usingTestMode && (
-            <div style={{ marginTop: 8, fontSize: 12, color: "#ffe0ab" }}>
-              Admin testmode actief — competitiedata is alvast zichtbaar voor jou, maar nog niet geldig voor het echte seizoen.
-            </div>
-          )}
         </Card>
       </Panel>
-
-      {!competitionUnlocked && (
-        <Panel title="PRE-SEASON" color={G.orange} icon="⏳">
-          <Card style={{ padding: "12px 14px", background: "rgba(217,138,59,0.12)" }}>
-            <p style={{ lineHeight: 1.6 }}>
-              Deze competitie-sectie wordt automatisch actief vanaf <strong>{unlockDate}</strong>.
-              Daarna kun je met de knop bovenaan de data verversen.
-            </p>
-          </Card>
-        </Panel>
-      )}
 
       {competitionUnlocked && <Panel title="GLORY BOYZ STATUS" color={G.orange} icon="⚽">
         <Card style={{ padding: "12px 14px", background: "linear-gradient(160deg, rgba(79,159,224,0.20), rgba(215,173,91,0.10))" }}>
@@ -1600,7 +1591,7 @@ function DatesView({ matchDates, saveMatchDates, genSchedule }) {
 }
 
 // ── PLAYER VIEW ───────────────────────────────────────────────────────────────
-function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, mySchedule, swapReq, startSwap, sendSwap, myOffers, acceptSwap, declineSwap, playerStats, competitionData, competitionUnlocked, motmRoundKey, motmVotesForRound, motmWinner, motmWinnerVotes, onCastMotmVote }) {
+function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, mySchedule, swapReq, startSwap, sendSwap, myOffers, acceptSwap, declineSwap, playerStats, competitionData, competitionUnlocked, motmWeekLabel, motmVotesForRound, motmWinner, motmWinnerVotes, motmSeasonLeader, motmSeasonLeaderWins, onCastMotmVote }) {
   const schedule = mySchedule(player.id);
   const playCount = schedule.filter(d => d.playing).length;
   const skipCount = schedule.filter(d => !d.playing).length;
@@ -1773,8 +1764,11 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
       <Panel title="MAN OF THE MATCH" color={G.gold} icon="🗳️">
         <Card style={{ padding:"10px 12px", background:"rgba(255,255,255,0.04)", boxShadow:"none" }}>
           <div style={{ fontSize:12, color:"#b7c6de", marginBottom:8 }}>
-            Week van {fmtDate(motmRoundKey)}:{" "}
+            Week ({motmWeekLabel}):{" "}
             {motmWinner ? `${motmWinner.name} (${motmWinnerVotes} stem${motmWinnerVotes === 1 ? "" : "men"})` : "nog geen stemmen"}
+          </div>
+          <div style={{ fontSize:11, color:"#9fb2ce", marginBottom:8 }}>
+            MVP stand: {motmSeasonLeader ? `${motmSeasonLeader.name} (${motmSeasonLeaderWins}x MOTM)` : "nog geen leider"}
           </div>
           <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
             <span style={{ fontSize:11, color:"#8fa3c2" }}>Optioneel:</span>
