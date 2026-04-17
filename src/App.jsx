@@ -64,6 +64,111 @@ const COMPETITION_INFO = {
     { home: "Glory Boyz FC", homeScore: 4, awayScore: 7, away: "De Meer" },
   ],
 };
+
+function stripActionNoise(s = "") {
+  return s
+    .replace(/\{[^}]*\}/g, "")
+    .replace(/["]+/g, "")
+    .trim();
+}
+
+function cleanTeamName(s = "") {
+  const cleaned = stripActionNoise(s).replace(/^.*>\s*/, "").trim();
+  return cleaned.replace(/\s{2,}/g, " ");
+}
+
+function parseCompetitionSnapshot(snapshot) {
+  const lines = snapshot.split(/\r?\n/).map(l => l.trim());
+
+  const standings = lines
+    .filter(line => /^\|\s*\d+\s*\|/.test(line))
+    .map(line => line.split("|").map(c => c.trim()).filter(Boolean))
+    .filter(cells => cells.length >= 10)
+    .map(cells => ({
+      pos: Number(cells[0]) || 0,
+      club: cleanTeamName(cells[1]),
+      played: Number(cells[2]) || 0,
+      won: Number(cells[3]) || 0,
+      drawn: Number(cells[4]) || 0,
+      lost: Number(cells[5]) || 0,
+      gf: Number(cells[6]) || 0,
+      ga: Number(cells[7]) || 0,
+      gd: Number(cells[8]) || 0,
+      points: Number(cells[9]) || 0,
+    }))
+    .filter(row => row.club);
+
+  const fixtureVsLines = lines.filter(line => line.includes(" vs "));
+  const fixtureTimes = lines
+    .filter(line => /^\|\s*\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}\s*\|$/.test(line))
+    .map(line => line.replace(/\|/g, "").trim());
+  const nextGames = fixtureVsLines.slice(0, 8).map((line, i) => {
+    const compact = stripActionNoise(line);
+    const [homeRaw = "", awayRaw = ""] = compact.split(" vs ");
+    const kickoff = fixtureTimes[i] || "";
+    const [date = "", time = ""] = kickoff.split(/\s+/);
+    return {
+      date,
+      time,
+      home: cleanTeamName(homeRaw),
+      away: cleanTeamName(awayRaw),
+    };
+  }).filter(m => m.home && m.away);
+
+  const resultRegex = /(.+?)\s+(\d+)\s+(\d+)\s+(.+)/;
+  const seen = new Set();
+  const lastRoundResults = [];
+  for (const line of lines) {
+    if (line.includes(" vs ") || line.startsWith("|")) continue;
+    const cleanLine = stripActionNoise(line);
+    const m = cleanLine.match(resultRegex);
+    if (!m) continue;
+    const home = cleanTeamName(m[1]);
+    const away = cleanTeamName(m[4]);
+    const homeScore = Number(m[2]);
+    const awayScore = Number(m[3]);
+    if (!home || !away || Number.isNaN(homeScore) || Number.isNaN(awayScore)) continue;
+    const key = `${home}|${homeScore}|${awayScore}|${away}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    lastRoundResults.push({ home, homeScore, awayScore, away });
+    if (lastRoundResults.length >= 8) break;
+  }
+
+  const dateLines = lines
+    .filter(line => /^\|\s*\d{2}\/\d{2}\/\d{4}\s*\|$/.test(line))
+    .map(line => line.replace(/\|/g, "").trim());
+  const lastRoundLabel = dateLines[0] || "";
+
+  return {
+    standings,
+    topTeams: standings.slice(0, 3).map(t => ({ pos: t.pos, club: t.club, played: t.played, won: t.won, points: t.points })),
+    nextGames,
+    lastRoundLabel,
+    lastRoundResults: lastRoundResults.slice(0, 4),
+  };
+}
+
+async function fetchCompetitionSnapshot(sourceUrl) {
+  const proxyUrl = "https://r.jina.ai/http://" + sourceUrl.replace(/^https?:\/\//, "");
+  const urls = [sourceUrl, proxyUrl];
+  let lastError = null;
+
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      if (text && text.includes("Current standings")) {
+        return text;
+      }
+      throw new Error("Unexpected response format");
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError || new Error("Could not load competition snapshot");
+}
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function fmtDate(d) {
   return new Date(d + "T00:00:00").toLocaleDateString("nl-NL", {
@@ -515,6 +620,7 @@ export default function App() {
   const [playerStats, setPlayerStats] = useState({});
   const [comicBursts, setComicBursts] = useState([]);
   const [competitionData, setCompetitionData] = useState(COMPETITION_INFO);
+  const [competitionRefreshing, setCompetitionRefreshing] = useState(false);
   const [motmVotes, setMotmVotes] = useState({});
 
   function showFloat(text, color) {
@@ -528,13 +634,29 @@ export default function App() {
     }
   }
 
-  function refreshCompetitionData() {
-    const refreshedAt = new Date().toLocaleString("nl-NL");
-    setCompetitionData(prev => ({
-      ...prev,
-      updatedLabel: "Handmatig ververst op " + refreshedAt,
-    }));
-    notify("Competitiedata ververst!");
+  async function refreshCompetitionData() {
+    if (competitionRefreshing) return;
+    setCompetitionRefreshing(true);
+    try {
+      const snapshot = await fetchCompetitionSnapshot(competitionData.sourceUrl);
+      const parsed = parseCompetitionSnapshot(snapshot);
+      const refreshedAt = new Date().toLocaleString("nl-NL");
+      setCompetitionData(prev => ({
+        ...prev,
+        standings: parsed.standings.length ? parsed.standings : prev.standings,
+        topTeams: parsed.topTeams.length ? parsed.topTeams : prev.topTeams,
+        nextGames: parsed.nextGames.length ? parsed.nextGames : prev.nextGames,
+        lastRoundLabel: parsed.lastRoundLabel || prev.lastRoundLabel,
+        lastRoundResults: parsed.lastRoundResults.length ? parsed.lastRoundResults : prev.lastRoundResults,
+        updatedLabel: "Live ververst op " + refreshedAt,
+      }));
+      notify("Competitiedata live ververst!");
+    } catch (err) {
+      console.error("Competition refresh error:", err);
+      notify("Verversen mislukt. Probeer het zo opnieuw.", true);
+    } finally {
+      setCompetitionRefreshing(false);
+    }
   }
 
   async function castMotmVote(voterId, targetId) {
@@ -981,6 +1103,7 @@ export default function App() {
               competitionData={competitionData}
               competitionUnlocked={competitionUnlocked}
               refreshCompetitionData={refreshCompetitionData}
+              competitionRefreshing={competitionRefreshing}
             />
           )}
           {view === "adminlogin" && (
@@ -1264,7 +1387,7 @@ function RosterView({ players, sched, avail, matchDates }) {
 }
 
 // ── COMPETITION VIEW ──────────────────────────────────────────────────────────
-function CompetitionView({ competitionData, competitionUnlocked, refreshCompetitionData }) {
+function CompetitionView({ competitionData, competitionUnlocked, refreshCompetitionData, competitionRefreshing }) {
   const gb = competitionData.standings.find(t => t.club === "Glory Boyz FC");
   return (
     <div>
@@ -1272,8 +1395,8 @@ function CompetitionView({ competitionData, competitionUnlocked, refreshCompetit
         <Card style={{ padding: "12px 14px", background: G.paperSoft, boxShadow: "none" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
             <Tag bg={G.green}>ACTIEF</Tag>
-            <Btn small bg={G.blue} onClick={refreshCompetitionData}>
-              🔄 VERVERS COMPETITIEDATA
+            <Btn small bg={G.blue} onClick={refreshCompetitionData} disabled={competitionRefreshing}>
+              {competitionRefreshing ? "⏳ VERVERSEN..." : "🔄 VERVERS COMPETITIEDATA"}
             </Btn>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
