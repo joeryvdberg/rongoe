@@ -22,7 +22,10 @@
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           const base = "%BASE_URL%";
-          navigator.serviceWorker.register(base + "sw.js", { scope: base });
+          navigator.serviceWorker.register(base + "sw.js", { scope: base }).then(reg => {
+            // Force update check on each app launch.
+            reg.update();
+          });
         });
       }
     </script>
