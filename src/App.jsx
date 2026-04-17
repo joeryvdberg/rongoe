@@ -64,6 +64,7 @@ const COMPETITION_INFO = {
     { home: "Glory Boyz FC", homeScore: 4, awayScore: 7, away: "De Meer" },
   ],
 };
+const COMPETITION_FEED_PATH = `${import.meta.env.BASE_URL}competition-live.json`;
 
 function stripActionNoise(s = "") {
   return s
@@ -213,6 +214,17 @@ async function fetchCompetitionSnapshot(sourceUrl) {
     }
   }
   throw lastError || new Error("Could not load competition snapshot");
+}
+
+async function fetchCompetitionFromFeed() {
+  const url = `${COMPETITION_FEED_PATH}?ts=${Date.now()}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Feed HTTP ${res.status}`);
+  const data = await res.json();
+  if (!data || !Array.isArray(data.standings) || !Array.isArray(data.nextGames)) {
+    throw new Error("Invalid competition feed format");
+  }
+  return data;
 }
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function fmtDate(d) {
@@ -683,16 +695,36 @@ export default function App() {
     if (competitionRefreshing) return;
     setCompetitionRefreshing(true);
     try {
-      const snapshot = await fetchCompetitionSnapshot(competitionData.sourceUrl);
-      const parsed = parseCompetitionSnapshot(snapshot);
       const refreshedAt = new Date().toLocaleString("nl-NL");
+      let nextData = null;
+      try {
+        const feedData = await fetchCompetitionFromFeed();
+        nextData = {
+          standings: feedData.standings,
+          topTeams: (feedData.topTeams || []).length ? feedData.topTeams : feedData.standings.slice(0, 3).map(t => ({ pos: t.pos, club: t.club, played: t.played, won: t.won, points: t.points })),
+          nextGames: feedData.nextGames,
+          lastRoundLabel: feedData.lastRoundLabel,
+          lastRoundResults: feedData.lastRoundResults,
+        };
+      } catch (feedErr) {
+        console.warn("Competition feed failed, falling back to snapshot parser:", feedErr);
+        const snapshot = await fetchCompetitionSnapshot(competitionData.sourceUrl);
+        const parsed = parseCompetitionSnapshot(snapshot);
+        nextData = {
+          standings: parsed.standings,
+          topTeams: parsed.topTeams,
+          nextGames: parsed.nextGames,
+          lastRoundLabel: parsed.lastRoundLabel,
+          lastRoundResults: parsed.lastRoundResults,
+        };
+      }
       setCompetitionData(prev => ({
         ...prev,
-        standings: parsed.standings.length ? parsed.standings : prev.standings,
-        topTeams: parsed.topTeams.length ? parsed.topTeams : prev.topTeams,
-        nextGames: parsed.nextGames.length ? parsed.nextGames : prev.nextGames,
-        lastRoundLabel: parsed.lastRoundLabel || prev.lastRoundLabel,
-        lastRoundResults: parsed.lastRoundResults.length ? parsed.lastRoundResults : prev.lastRoundResults,
+        standings: nextData.standings?.length ? nextData.standings : prev.standings,
+        topTeams: nextData.topTeams?.length ? nextData.topTeams : prev.topTeams,
+        nextGames: nextData.nextGames?.length ? nextData.nextGames : prev.nextGames,
+        lastRoundLabel: nextData.lastRoundLabel || prev.lastRoundLabel,
+        lastRoundResults: nextData.lastRoundResults?.length ? nextData.lastRoundResults : prev.lastRoundResults,
         updatedLabel: "Live ververst op " + refreshedAt,
       }));
       if (!silent) notify("Competitiedata live ververst!");
