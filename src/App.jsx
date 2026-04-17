@@ -1255,12 +1255,41 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
         </div>
       </Panel>
 
-      <Card style={{ padding:"8px 10px", marginTop:6, background:"rgba(255,255,255,0.04)", boxShadow:"none" }}>
-        <div style={{ fontSize:12, color:"#b7c6de", lineHeight:1.5 }}>
-          <strong>MOTM ({motmWeekLabel})</strong>: {motmWinner ? `${motmWinner.name} (${motmWinnerVotes} stem${motmWinnerVotes === 1 ? "" : "men"})` : "nog geen stemmen"} ·{" "}
-          <strong>MVP stand</strong>: {motmSeasonLeader ? `${motmSeasonLeader.name} (${motmSeasonLeaderWins}x MOTM)` : "nog geen leider"}
+      <Panel title="MOTM" color={G.purple || G.blue} icon="⭐">
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:10 }}>
+          <Card color={G.green} style={{ padding:"12px 14px", background:"linear-gradient(160deg, rgba(67,185,123,0.24), rgba(67,185,123,0.10))" }}>
+            <div style={{ fontSize:11, letterSpacing:1.2, textTransform:"uppercase", color:"#d8ffe9", fontWeight:800 }}>
+              Man of the Match ({motmWeekLabel})
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:4, marginTop:8 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:"rgba(0,0,0,0.14)", border:"1px solid rgba(255,255,255,0.18)", borderRadius:8, padding:"6px 8px" }}>
+                <span style={{ fontFamily:"Bangers, cursive", fontSize:20, lineHeight:1, color:"#effff6" }}>
+                  {motmWinner ? `#1 ${motmWinner.name}` : "Nog geen stemmen"}
+                </span>
+                <span style={{ fontWeight:800, color:"#d8ffe9" }}>
+                  {motmWinner ? `${motmWinnerVotes}` : "-"}
+                </span>
+              </div>
+            </div>
+          </Card>
+
+          <Card color={G.gold} style={{ padding:"12px 14px", background:"linear-gradient(160deg, rgba(215,173,91,0.24), rgba(215,173,91,0.10))" }}>
+            <div style={{ fontSize:11, letterSpacing:1.2, textTransform:"uppercase", color:"#ffe8b8", fontWeight:800 }}>
+              MVP stand
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:4, marginTop:8 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:"rgba(0,0,0,0.14)", border:"1px solid rgba(255,255,255,0.18)", borderRadius:8, padding:"6px 8px" }}>
+                <span style={{ fontFamily:"Bangers, cursive", fontSize:20, lineHeight:1, color:"#fff3d5" }}>
+                  {motmSeasonLeader ? `#1 ${motmSeasonLeader.name}` : "Nog geen leider"}
+                </span>
+                <span style={{ fontWeight:800, color:"#fff3d5" }}>
+                  {motmSeasonLeader ? `${motmSeasonLeaderWins}x` : "-"}
+                </span>
+              </div>
+            </div>
+          </Card>
         </div>
-      </Card>
+      </Panel>
     </div>
   );
 }
