@@ -21,7 +21,10 @@ jobs:
           node-version: 20
 
       - name: Sync competition feed
-        run: node scripts/sync-competition.mjs
+        run: |
+          if ! node scripts/sync-competition.mjs; then
+            echo "Competition sync source temporarily unavailable; keeping existing feed."
+          fi
 
       - name: Commit updated feed
         run: |
