@@ -6,10 +6,179 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 24-4-2026, 06:28:41",
-  "topTeams": [],
-  "standings": [],
-  "nextGames": [],
-  "lastRoundLabel": "",
-  "lastRoundResults": []
+  "updatedLabel": "Live sync op 24-04-2026 10:50:12",
+  "topTeams": [
+    {
+      "pos": 1,
+      "club": "De Hertenjagers Reunited",
+      "played": 13,
+      "won": 9,
+      "points": 27
+    },
+    {
+      "pos": 2,
+      "club": "Connaisseurs",
+      "played": 13,
+      "won": 9,
+      "points": 27
+    },
+    {
+      "pos": 3,
+      "club": "Los Fuegos",
+      "played": 13,
+      "won": 8,
+      "points": 25
+    }
+  ],
+  "standings": [
+    {
+      "pos": 1,
+      "club": "De Hertenjagers Reunited",
+      "played": 13,
+      "won": 9,
+      "drawn": 0,
+      "lost": 4,
+      "gf": 98,
+      "ga": 75,
+      "gd": 23,
+      "points": 27
+    },
+    {
+      "pos": 2,
+      "club": "Connaisseurs",
+      "played": 13,
+      "won": 9,
+      "drawn": 0,
+      "lost": 4,
+      "gf": 108,
+      "ga": 87,
+      "gd": 21,
+      "points": 27
+    },
+    {
+      "pos": 3,
+      "club": "Los Fuegos",
+      "played": 13,
+      "won": 8,
+      "drawn": 1,
+      "lost": 4,
+      "gf": 89,
+      "ga": 75,
+      "gd": 14,
+      "points": 25
+    },
+    {
+      "pos": 4,
+      "club": "The Mohicans",
+      "played": 13,
+      "won": 8,
+      "drawn": 0,
+      "lost": 5,
+      "gf": 77,
+      "ga": 62,
+      "gd": 15,
+      "points": 24
+    },
+    {
+      "pos": 5,
+      "club": "De Meer",
+      "played": 13,
+      "won": 6,
+      "drawn": 0,
+      "lost": 7,
+      "gf": 73,
+      "ga": 75,
+      "gd": -2,
+      "points": 18
+    },
+    {
+      "pos": 6,
+      "club": "The Big 5",
+      "played": 13,
+      "won": 5,
+      "drawn": 2,
+      "lost": 6,
+      "gf": 79,
+      "ga": 74,
+      "gd": 5,
+      "points": 17
+    },
+    {
+      "pos": 7,
+      "club": "Glory Boyz FC",
+      "played": 13,
+      "won": 3,
+      "drawn": 1,
+      "lost": 9,
+      "gf": 59,
+      "ga": 78,
+      "gd": -19,
+      "points": 10
+    },
+    {
+      "pos": 8,
+      "club": "FC Linksbuitenadem",
+      "played": 13,
+      "won": 2,
+      "drawn": 0,
+      "lost": 11,
+      "gf": 59,
+      "ga": 116,
+      "gd": -57,
+      "points": 6
+    }
+  ],
+  "nextGames": [
+    {
+      "date": "30/04/2026",
+      "time": "19:00",
+      "home": "Glory Boyz FC",
+      "away": "FC Linksbuitenadem"
+    },
+    {
+      "date": "30/04/2026",
+      "time": "19:00",
+      "home": "The Mohicans",
+      "away": "De Hertenjagers Reunited"
+    },
+    {
+      "date": "30/04/2026",
+      "time": "19:00",
+      "home": "The Big 5",
+      "away": "Connaisseurs"
+    },
+    {
+      "date": "30/04/2026",
+      "time": "19:00",
+      "home": "Los Fuegos",
+      "away": "De Meer"
+    }
+  ],
+  "lastRoundLabel": "23/04/2026",
+  "lastRoundResults": [
+    {
+      "home": "De Hertenjagers Reunited",
+      "homeScore": 9,
+      "awayScore": 6,
+      "away": "De Meer"
+    },
+    {
+      "home": "The Big 5",
+      "homeScore": 5,
+      "awayScore": 7,
+      "away": "The Mohicans"
+    },
+    {
+      "home": "Connaisseurs",
+      "homeScore": 9,
+      "awayScore": 7,
+      "away": "FC Linksbuitenadem"
+    },
+    {
+      "home": "Los Fuegos",
+      "homeScore": 2,
+      "awayScore": 4,
+      "away": "Glory Boyz FC"
+    }
+  ]
 }

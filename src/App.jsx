@@ -89,6 +89,13 @@ function parseClubCell(cell = "") {
   return cleanTeamName(parts[parts.length - 1] || cell);
 }
 
+function parseNlDateTime(dateStr = "", timeStr = "00:00") {
+  const [dd, mm, yyyy] = dateStr.split("/").map(Number);
+  const [hh, mi] = timeStr.split(":").map(Number);
+  if (!dd || !mm || !yyyy) return null;
+  return new Date(yyyy, mm - 1, dd, Number.isFinite(hh) ? hh : 0, Number.isFinite(mi) ? mi : 0, 0, 0);
+}
+
 function extractTeamPairFromLine(line, knownTeams = []) {
   const matches = knownTeams
     .map(name => ({ name, idx: line.indexOf(name) }))
@@ -145,6 +152,11 @@ function parseCompetitionSnapshot(snapshot) {
       if (nextGamesSeen.has(key)) return false;
       nextGamesSeen.add(key);
       return true;
+    })
+    .sort((a, b) => {
+      const ta = parseNlDateTime(a.date, a.time)?.getTime() || 0;
+      const tb = parseNlDateTime(b.date, b.time)?.getTime() || 0;
+      return ta - tb;
     })
     .slice(0, 8);
 
@@ -221,8 +233,11 @@ async function fetchCompetitionFromFeed() {
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(`Feed HTTP ${res.status}`);
   const data = await res.json();
-  if (!data || !Array.isArray(data.standings) || !Array.isArray(data.nextGames)) {
+  if (!data || !Array.isArray(data.standings) || !Array.isArray(data.nextGames) || !Array.isArray(data.lastRoundResults)) {
     throw new Error("Invalid competition feed format");
+  }
+  if (data.standings.length < 6 || data.nextGames.length < 1 || data.lastRoundResults.length < 1) {
+    throw new Error("Competition feed incomplete");
   }
   return data;
 }
@@ -468,6 +483,13 @@ const css = `
       flex: 1 1 calc(50% - 8px);
       min-width: 0;
       text-align: center;
+      font-size: 20px !important;
+      letter-spacing: 0.9px !important;
+      padding: 8px 12px !important;
+    }
+    .admin-tabs > button.long-tab {
+      font-size: 17px !important;
+      letter-spacing: 0.55px !important;
     }
     .players-admin-row {
       align-items: flex-start;
@@ -1265,9 +1287,18 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
     .map(p => ({ ...p, value: playerStats[p.id]?.assists || 0 }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 3);
-  const nextClubMatch = competitionData?.nextGames?.find(
-    m => m.home === "Glory Boyz FC" || m.away === "Glory Boyz FC"
-  );
+  const now = new Date();
+  const nextClubMatch = competitionData?.nextGames
+    ?.filter(m => m.home === "Glory Boyz FC" || m.away === "Glory Boyz FC")
+    .filter(m => {
+      const dt = parseNlDateTime(m.date, m.time);
+      return dt ? dt >= now : false;
+    })
+    .sort((a, b) => {
+      const ta = parseNlDateTime(a.date, a.time)?.getTime() || 0;
+      const tb = parseNlDateTime(b.date, b.time)?.getTime() || 0;
+      return ta - tb;
+    })[0];
   const nextOpponent = nextClubMatch
     ? (nextClubMatch.home === "Glory Boyz FC" ? nextClubMatch.away : nextClubMatch.home)
     : null;
@@ -1683,6 +1714,9 @@ function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule
     <div>
       <div className="admin-tabs">
         {[["schedule","ROOSTER"],["availability","BESCHIKBAARHEID"],["dates","SPEELDATA"],["players","SPELERS"],["motm","MOTM"]].map(([t,label]) => (
+          (() => {
+            const isLongTab = label.length > 10;
+            return (
           <button key={t} onClick={() => setAdminTab(t)} style={{
             fontFamily:"Bangers, cursive", fontSize:24, letterSpacing:1.2,
             padding:"8px 18px", borderRadius:8, border:"2.5px solid "+G.ink,
@@ -1690,7 +1724,9 @@ function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule
             boxShadow: adminTab===t ? "0 8px 16px rgba(0,0,0,0.35)" : "0 6px 14px rgba(0,0,0,0.26)",
             cursor:"pointer",
             color: adminTab===t ? "#121722" : "#f2f5ff",
-          }} className="nav-kapow">{label}</button>
+          }} className={`nav-kapow ${isLongTab ? "long-tab" : ""}`}>{label}</button>
+            );
+          })()
         ))}
       </div>
 
@@ -1924,9 +1960,18 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
 
   let nextClubMatch = null;
   if (competitionUnlocked && competitionData?.nextGames?.length) {
-    nextClubMatch = competitionData.nextGames.find(
-      m => m.home === "Glory Boyz FC" || m.away === "Glory Boyz FC"
-    ) || null;
+    const now = new Date();
+    nextClubMatch = competitionData.nextGames
+      .filter(m => m.home === "Glory Boyz FC" || m.away === "Glory Boyz FC")
+      .filter(m => {
+        const dt = parseNlDateTime(m.date, m.time);
+        return dt ? dt >= now : false;
+      })
+      .sort((a, b) => {
+        const ta = parseNlDateTime(a.date, a.time)?.getTime() || 0;
+        const tb = parseNlDateTime(b.date, b.time)?.getTime() || 0;
+        return ta - tb;
+      })[0] || null;
   }
 
   return (

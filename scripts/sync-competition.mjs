@@ -26,6 +26,13 @@ function parseClubCell(cell = "") {
   return cleanTeamName(parts[parts.length - 1] || cell);
 }
 
+function parseNlDateTime(dateStr = "", timeStr = "00:00") {
+  const [dd, mm, yyyy] = dateStr.split("/").map(Number);
+  const [hh, mi] = timeStr.split(":").map(Number);
+  if (!dd || !mm || !yyyy) return null;
+  return new Date(yyyy, mm - 1, dd, Number.isFinite(hh) ? hh : 0, Number.isFinite(mi) ? mi : 0, 0, 0);
+}
+
 function extractTeamPairFromLine(line, knownTeams = []) {
   const matches = knownTeams
     .map(name => ({ name, idx: line.indexOf(name) }))
@@ -77,6 +84,11 @@ function parseCompetitionSnapshot(snapshot) {
       if (nextGamesSeen.has(key)) return false;
       nextGamesSeen.add(key);
       return true;
+    })
+    .sort((a, b) => {
+      const ta = parseNlDateTime(a.date, a.time)?.getTime() || 0;
+      const tb = parseNlDateTime(b.date, b.time)?.getTime() || 0;
+      return ta - tb;
     })
     .slice(0, 8);
 
@@ -157,5 +169,8 @@ async function fetchSnapshot() {
 
 const snapshot = await fetchSnapshot();
 const parsed = parseCompetitionSnapshot(snapshot);
+if (parsed.standings.length < 6 || parsed.nextGames.length < 1 || parsed.lastRoundResults.length < 1) {
+  throw new Error("Parsed competition data incomplete; aborting feed update.");
+}
 await writeFile(OUT_PATH, JSON.stringify(parsed, null, 2) + "\n", "utf-8");
 console.log("Updated public/competition-live.json");
