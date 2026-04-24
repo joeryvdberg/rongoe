@@ -1295,6 +1295,7 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
     .sort((a, b) => b.value - a.value)
     .slice(0, 3);
   const [publicChoice, setPublicChoice] = useState("");
+  const [publicVoteOpen, setPublicVoteOpen] = useState(false);
   const publicCurrentVote = motmVotesForRound?.[PUBLIC_VOTER_ID] || "";
   const now = new Date();
   const nextClubMatch = competitionData?.nextGames
@@ -1363,56 +1364,65 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
           })}
         </div>
         <Card style={{ marginTop:10, padding:"10px 12px", background:G.paperSoft }}>
-          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-            <button
-              className="card-hover btn-press anim-slidein comic-tile"
-              style={{
-                width:"100%",
-                background:"linear-gradient(160deg, #8893a7, #616e86)",
-                border:"2px solid #0d1118",
-                borderRadius:14,
-                boxShadow:"0 10px 20px rgba(0,0,0,0.30), 3px 3px 0 #0d1118",
-                padding:"14px 12px",
-                cursor:"default",
-                display:"flex",
-                alignItems:"center",
-                justifyContent:"space-between",
-                gap:10
-              }}
-            >
+          <button
+            onClick={() => setPublicVoteOpen(v => !v)}
+            className="card-hover btn-press anim-slidein comic-tile"
+            style={{
+              width:"100%",
+              background:"linear-gradient(160deg, #8893a7, #616e86)",
+              border:"2px solid #0d1118",
+              borderRadius:14,
+              boxShadow:"0 10px 20px rgba(0,0,0,0.30), 3px 3px 0 #0d1118",
+              padding:"14px 12px",
+              cursor:"pointer",
+              display:"flex",
+              flexDirection:"column",
+              alignItems:"stretch",
+              gap:10,
+              textAlign:"left"
+            }}
+          >
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
               <span style={{ fontFamily:"Bangers, cursive", fontSize:30, letterSpacing:1, color:"#f9fbff" }}>PUBLIEK</span>
-              <span style={{ fontSize:12, color:"#e8eefb", fontWeight:700 }}>1 gezamenlijke MOTM stem</span>
-            </button>
-            <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
-              <select
-                value={publicChoice}
-                onChange={e => setPublicChoice(e.target.value)}
-                style={{ border:"1.5px solid "+G.line, borderRadius:8, background:G.paperSoft, color:G.ink, padding:"6px 8px", fontSize:12, minWidth:190 }}
-              >
-                <option value="">Kies MOTM (publiek)...</option>
-                {players.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-              <Btn
-                small
-                bg={G.blue}
-                disabled={!publicChoice}
-                onClick={() => {
-                  if (!publicChoice) return;
-                  onCastPublicMotmVote(Number(publicChoice));
-                  setPublicChoice("");
-                }}
-              >
-                STEM ALS PUBLIEK
-              </Btn>
-              {publicCurrentVote && (
-                <span style={{ fontSize:11, color:"#9fd0ff" }}>
-                  Publiek stem: {players.find(p => String(p.id) === String(publicCurrentVote))?.name || "onbekend"}
-                </span>
-              )}
+              <span style={{ fontSize:12, color:"#e8eefb", fontWeight:700 }}>
+                {publicVoteOpen ? "sluit stemveld" : "klik om te stemmen"}
+              </span>
             </div>
-          </div>
+            {publicVoteOpen && (
+              <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+                <select
+                  value={publicChoice}
+                  onChange={e => setPublicChoice(e.target.value)}
+                  onClick={e => e.stopPropagation()}
+                  style={{ border:"1.5px solid "+G.line, borderRadius:8, background:G.paperSoft, color:G.ink, padding:"6px 8px", fontSize:12, minWidth:190 }}
+                >
+                  <option value="">Kies MOTM (publiek)...</option>
+                  {players.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <Btn
+                  small
+                  bg={G.blue}
+                  disabled={!publicChoice}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!publicChoice) return;
+                    onCastPublicMotmVote(Number(publicChoice));
+                    setPublicChoice("");
+                    setPublicVoteOpen(false);
+                  }}
+                >
+                  STEM ALS PUBLIEK
+                </Btn>
+                {publicCurrentVote && (
+                  <span style={{ fontSize:11, color:"#9fd0ff" }}>
+                    Publiek stem: {players.find(p => String(p.id) === String(publicCurrentVote))?.name || "onbekend"}
+                  </span>
+                )}
+              </div>
+            )}
+          </button>
         </Card>
       </Panel>
 
@@ -2296,21 +2306,41 @@ function PlayersAdmin({ players, addPlayer, removePlayer, savePlayerName, player
                 G+A: {(playerStats[p.id]?.goals ?? 0) + (playerStats[p.id]?.assists ?? 0)}
               </span>
               <label style={{ fontSize:10, color:"#b7c5dd", fontWeight:700 }}>G</label>
-              <input
-                type="number"
-                min="0"
-                value={playerStats[p.id]?.goals ?? 0}
-                onChange={e => updatePlayerStats(p.id, e.target.value, playerStats[p.id]?.assists ?? 0)}
-                style={{ width:52, border:"1.5px solid "+G.line, borderRadius:6, padding:"4px 6px", fontSize:12, background:"#111722", color:G.ink }}
-              />
+              <button
+                className="btn-press"
+                onClick={() => updatePlayerStats(p.id, Math.max(0, (playerStats[p.id]?.goals ?? 0) - 1), playerStats[p.id]?.assists ?? 0)}
+                style={{ width:24, height:24, border:"1.5px solid "+G.line, borderRadius:6, background:G.paperSoft, color:G.ink, fontWeight:900, cursor:"pointer" }}
+              >
+                -
+              </button>
+              <span style={{ width:28, textAlign:"center", fontSize:12, fontWeight:800, color:G.ink }}>
+                {playerStats[p.id]?.goals ?? 0}
+              </span>
+              <button
+                className="btn-press"
+                onClick={() => updatePlayerStats(p.id, (playerStats[p.id]?.goals ?? 0) + 1, playerStats[p.id]?.assists ?? 0)}
+                style={{ width:24, height:24, border:"1.5px solid "+G.line, borderRadius:6, background:G.paperSoft, color:G.ink, fontWeight:900, cursor:"pointer" }}
+              >
+                +
+              </button>
               <label style={{ fontSize:10, color:"#b7c5dd", fontWeight:700 }}>A</label>
-              <input
-                type="number"
-                min="0"
-                value={playerStats[p.id]?.assists ?? 0}
-                onChange={e => updatePlayerStats(p.id, playerStats[p.id]?.goals ?? 0, e.target.value)}
-                style={{ width:52, border:"1.5px solid "+G.line, borderRadius:6, padding:"4px 6px", fontSize:12, background:"#111722", color:G.ink }}
-              />
+              <button
+                className="btn-press"
+                onClick={() => updatePlayerStats(p.id, playerStats[p.id]?.goals ?? 0, Math.max(0, (playerStats[p.id]?.assists ?? 0) - 1))}
+                style={{ width:24, height:24, border:"1.5px solid "+G.line, borderRadius:6, background:G.paperSoft, color:G.ink, fontWeight:900, cursor:"pointer" }}
+              >
+                -
+              </button>
+              <span style={{ width:28, textAlign:"center", fontSize:12, fontWeight:800, color:G.ink }}>
+                {playerStats[p.id]?.assists ?? 0}
+              </span>
+              <button
+                className="btn-press"
+                onClick={() => updatePlayerStats(p.id, playerStats[p.id]?.goals ?? 0, (playerStats[p.id]?.assists ?? 0) + 1)}
+                style={{ width:24, height:24, border:"1.5px solid "+G.line, borderRadius:6, background:G.paperSoft, color:G.ink, fontWeight:900, cursor:"pointer" }}
+              >
+                +
+              </button>
             </div>
             <div className="players-admin-actions">
               {editId === p.id ? (
