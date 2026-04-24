@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL = "https://egdsaevqmnwelliroztr.supabase.co";
 const SUPABASE_KEY = "sb_publishable_2xhR-vsq212VM6HWTgy6GQ_3nHZs0-h";
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+const PUBLIC_VOTER_ID = 9999;
 
 // ── DEFAULTS ──────────────────────────────────────────────────────────────────
 const DEFAULT_DATES = [
@@ -789,6 +790,10 @@ export default function App() {
     notify("MOTM stem opgeslagen!");
   }
 
+  function castPublicMotmVote(targetId) {
+    return castMotmVote(PUBLIC_VOTER_ID, targetId);
+  }
+
   const competitionUnlocked = true;
   const motmRoundKey = getThursdayRoundKey();
   const motmWeekLabel = getMotmWeekLabel(motmRoundKey);
@@ -1213,6 +1218,8 @@ export default function App() {
               motmSeasonLeader={motmSeasonLeader}
               motmSeasonLeaderWins={motmSeasonLeaderId ? motmWinsByPlayer[motmSeasonLeaderId] : 0}
               motmSeasonTop3={motmSeasonTop3}
+              motmVotesForRound={motmVotesForRound}
+              onCastPublicMotmVote={castPublicMotmVote}
             />
           )}
           {view === "roster" && (
@@ -1268,7 +1275,7 @@ export default function App() {
 }
 
 // ── HOME VIEW ─────────────────────────────────────────────────────────────────
-function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData, motmWeekLabel, motmWinner, motmWinnerVotes, motmSeasonLeader, motmSeasonLeaderWins, motmSeasonTop3 }) {
+function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData, motmWeekLabel, motmWinner, motmWinnerVotes, motmSeasonLeader, motmSeasonLeaderWins, motmSeasonTop3, motmVotesForRound, onCastPublicMotmVote }) {
   const comicTileGradients = [
     "linear-gradient(160deg, #57b8ff, #318fdb)",
     "linear-gradient(160deg, #ffb347, #f48a1f)",
@@ -1287,6 +1294,8 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
     .map(p => ({ ...p, value: playerStats[p.id]?.assists || 0 }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 3);
+  const [publicChoice, setPublicChoice] = useState("");
+  const publicCurrentVote = motmVotesForRound?.[PUBLIC_VOTER_ID] || "";
   const now = new Date();
   const nextClubMatch = competitionData?.nextGames
     ?.filter(m => m.home === "Glory Boyz FC" || m.away === "Glory Boyz FC")
@@ -1353,6 +1362,58 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
             );
           })}
         </div>
+        <Card style={{ marginTop:10, padding:"10px 12px", background:G.paperSoft }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            <button
+              className="card-hover btn-press anim-slidein comic-tile"
+              style={{
+                width:"100%",
+                background:"linear-gradient(160deg, #8893a7, #616e86)",
+                border:"2px solid #0d1118",
+                borderRadius:14,
+                boxShadow:"0 10px 20px rgba(0,0,0,0.30), 3px 3px 0 #0d1118",
+                padding:"14px 12px",
+                cursor:"default",
+                display:"flex",
+                alignItems:"center",
+                justifyContent:"space-between",
+                gap:10
+              }}
+            >
+              <span style={{ fontFamily:"Bangers, cursive", fontSize:30, letterSpacing:1, color:"#f9fbff" }}>PUBLIEK</span>
+              <span style={{ fontSize:12, color:"#e8eefb", fontWeight:700 }}>1 gezamenlijke MOTM stem</span>
+            </button>
+            <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+              <select
+                value={publicChoice}
+                onChange={e => setPublicChoice(e.target.value)}
+                style={{ border:"1.5px solid "+G.line, borderRadius:8, background:G.paperSoft, color:G.ink, padding:"6px 8px", fontSize:12, minWidth:190 }}
+              >
+                <option value="">Kies MOTM (publiek)...</option>
+                {players.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              <Btn
+                small
+                bg={G.blue}
+                disabled={!publicChoice}
+                onClick={() => {
+                  if (!publicChoice) return;
+                  onCastPublicMotmVote(Number(publicChoice));
+                  setPublicChoice("");
+                }}
+              >
+                STEM ALS PUBLIEK
+              </Btn>
+              {publicCurrentVote && (
+                <span style={{ fontSize:11, color:"#9fd0ff" }}>
+                  Publiek stem: {players.find(p => String(p.id) === String(publicCurrentVote))?.name || "onbekend"}
+                </span>
+              )}
+            </div>
+          </div>
+        </Card>
       </Panel>
 
       <Panel title="BESCHIKBAARHEID" color={G.red} icon="🗓️">
