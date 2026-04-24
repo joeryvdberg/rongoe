@@ -775,6 +775,13 @@ export default function App() {
     acc[targetId] = (acc[targetId] || 0) + 1;
     return acc;
   }, {});
+  const motmRoundLeaderboard = Object.entries(motmCountMap)
+    .sort((a, b) => b[1] - a[1])
+    .map(([playerId, votes]) => ({
+      player: players.find(p => String(p.id) === String(playerId)),
+      votes,
+    }))
+    .filter(row => row.player);
   const motmWinnerId = Object.keys(motmCountMap).sort((a, b) => motmCountMap[b] - motmCountMap[a])[0];
   const motmWinner = players.find(p => String(p.id) === String(motmWinnerId)) || null;
   const motmWinsByPlayer = Object.entries(motmVotes).reduce((acc, [, votesForRound]) => {
@@ -783,6 +790,14 @@ export default function App() {
     acc[winnerId] = (acc[winnerId] || 0) + 1;
     return acc;
   }, {});
+  const motmSeasonTop3 = Object.entries(motmWinsByPlayer)
+    .sort((a, b) => b[1] - a[1])
+    .map(([playerId, wins]) => ({
+      player: players.find(p => String(p.id) === String(playerId)),
+      wins,
+    }))
+    .filter(row => row.player)
+    .slice(0, 3);
   const motmSeasonLeaderId = Object.keys(motmWinsByPlayer).sort((a, b) => motmWinsByPlayer[b] - motmWinsByPlayer[a])[0];
   const motmSeasonLeader = players.find(p => String(p.id) === String(motmSeasonLeaderId)) || null;
 
@@ -1175,6 +1190,7 @@ export default function App() {
               motmWinnerVotes={motmWinnerId ? motmCountMap[motmWinnerId] : 0}
               motmSeasonLeader={motmSeasonLeader}
               motmSeasonLeaderWins={motmSeasonLeaderId ? motmWinsByPlayer[motmSeasonLeaderId] : 0}
+              motmSeasonTop3={motmSeasonTop3}
             />
           )}
           {view === "roster" && (
@@ -1199,6 +1215,10 @@ export default function App() {
               saveMatchDates={saveMatchDates}
               addPlayer={addPlayer} removePlayer={removePlayer} savePlayerName={savePlayerName}
               playerStats={playerStats} updatePlayerStats={updatePlayerStats}
+              motmWeekLabel={motmWeekLabel}
+              motmRoundVotesTotal={Object.values(motmVotesForRound).length}
+              motmRoundLeaderboard={motmRoundLeaderboard}
+              motmSeasonTop3={motmSeasonTop3}
             />
           )}
           {view === "player" && activePlayer && (
@@ -1226,7 +1246,7 @@ export default function App() {
 }
 
 // ── HOME VIEW ─────────────────────────────────────────────────────────────────
-function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData, motmWeekLabel, motmWinner, motmWinnerVotes, motmSeasonLeader, motmSeasonLeaderWins }) {
+function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData, motmWeekLabel, motmWinner, motmWinnerVotes, motmSeasonLeader, motmSeasonLeaderWins, motmSeasonTop3 }) {
   const comicTileGradients = [
     "linear-gradient(160deg, #57b8ff, #318fdb)",
     "linear-gradient(160deg, #ffb347, #f48a1f)",
@@ -1366,14 +1386,17 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
               MVP stand
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:4, marginTop:8 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:"rgba(0,0,0,0.14)", border:"1px solid rgba(255,255,255,0.18)", borderRadius:8, padding:"6px 8px" }}>
-                <span style={{ fontFamily:"Bangers, cursive", fontSize:20, lineHeight:1, color:"#fff3d5" }}>
-                  {motmSeasonLeader ? `#1 ${motmSeasonLeader.name}` : "Nog geen leider"}
-                </span>
-                <span style={{ fontWeight:800, color:"#fff3d5" }}>
-                  {motmSeasonLeader ? `${motmSeasonLeaderWins}x` : "-"}
-                </span>
-              </div>
+              {motmSeasonTop3.map((row, idx) => (
+                <div key={row.player.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:"rgba(0,0,0,0.14)", border:"1px solid rgba(255,255,255,0.18)", borderRadius:8, padding:"6px 8px" }}>
+                  <span style={{ fontFamily:"Bangers, cursive", fontSize:20, lineHeight:1, color:"#fff3d5" }}>
+                    <span style={{ color:"#ffe1a0", marginRight:6 }}>#{idx+1}</span>{row.player.name}
+                  </span>
+                  <span style={{ fontWeight:800, color:"#fff3d5" }}>{row.wins}x</span>
+                </div>
+              ))}
+              {motmSeasonTop3.length === 0 && (
+                <div style={{ marginTop:4, fontWeight:700, color:"#ffe1a0" }}>Nog geen leider</div>
+              )}
             </div>
           </Card>
         </div>
@@ -1655,11 +1678,11 @@ function AdminLogin({ adminPwInput, setAdminPwInput, adminPwError, tryAdminLogin
 }
 
 // ── ADMIN VIEW ────────────────────────────────────────────────────────────────
-function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule, adminTab, setAdminTab, saveMatchDates, addPlayer, removePlayer, savePlayerName, playerStats, updatePlayerStats }) {
+function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule, adminTab, setAdminTab, saveMatchDates, addPlayer, removePlayer, savePlayerName, playerStats, updatePlayerStats, motmWeekLabel, motmRoundVotesTotal, motmRoundLeaderboard, motmSeasonTop3 }) {
   return (
     <div>
       <div className="admin-tabs">
-        {[["schedule","ROOSTER"],["availability","BESCHIKBAARHEID"],["dates","SPEELDATA"],["players","SPELERS"]].map(([t,label]) => (
+        {[["schedule","ROOSTER"],["availability","BESCHIKBAARHEID"],["dates","SPEELDATA"],["players","SPELERS"],["motm","MOTM"]].map(([t,label]) => (
           <button key={t} onClick={() => setAdminTab(t)} style={{
             fontFamily:"Bangers, cursive", fontSize:24, letterSpacing:1.2,
             padding:"8px 18px", borderRadius:8, border:"2.5px solid "+G.ink,
@@ -1768,6 +1791,42 @@ function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule
           playerStats={playerStats}
           updatePlayerStats={updatePlayerStats}
         />
+      )}
+
+      {adminTab === "motm" && (
+        <Panel title="MOTM STEMMEN" color={G.gold} icon="🗳️">
+          <Card style={{ padding:"12px 14px", marginBottom:10, background:G.paperSoft, boxShadow:"none" }}>
+            <div style={{ fontSize:12, color:"#b7c6de" }}>
+              Week: <strong>{motmWeekLabel}</strong> · Totaal stemmen: <strong>{motmRoundVotesTotal}</strong>
+            </div>
+          </Card>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(230px, 1fr))", gap:10 }}>
+            <Card color={G.green} style={{ padding:"12px 14px", background:"linear-gradient(160deg, rgba(67,185,123,0.24), rgba(67,185,123,0.10))" }}>
+              <div style={{ fontSize:11, letterSpacing:1.2, textTransform:"uppercase", color:"#d8ffe9", fontWeight:800 }}>Stemmen deze week</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:4, marginTop:8 }}>
+                {motmRoundLeaderboard.map((row, idx) => (
+                  <div key={row.player.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:"rgba(0,0,0,0.14)", border:"1px solid rgba(255,255,255,0.18)", borderRadius:8, padding:"6px 8px" }}>
+                    <span style={{ fontFamily:"Bangers, cursive", fontSize:19, lineHeight:1 }}><span style={{ color:"#b8ffd4", marginRight:6 }}>#{idx+1}</span>{row.player.name}</span>
+                    <span style={{ fontWeight:800, color:"#d8ffe9" }}>{row.votes}</span>
+                  </div>
+                ))}
+                {motmRoundLeaderboard.length === 0 && <div style={{ marginTop:4, fontWeight:700, color:"#b8ffd4" }}>Nog geen stemmen</div>}
+              </div>
+            </Card>
+            <Card color={G.gold} style={{ padding:"12px 14px", background:"linear-gradient(160deg, rgba(215,173,91,0.24), rgba(215,173,91,0.10))" }}>
+              <div style={{ fontSize:11, letterSpacing:1.2, textTransform:"uppercase", color:"#ffe8b8", fontWeight:800 }}>MVP stand (top 3)</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:4, marginTop:8 }}>
+                {motmSeasonTop3.map((row, idx) => (
+                  <div key={row.player.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:"rgba(0,0,0,0.14)", border:"1px solid rgba(255,255,255,0.18)", borderRadius:8, padding:"6px 8px" }}>
+                    <span style={{ fontFamily:"Bangers, cursive", fontSize:19, lineHeight:1 }}><span style={{ color:"#ffe1a0", marginRight:6 }}>#{idx+1}</span>{row.player.name}</span>
+                    <span style={{ fontWeight:800, color:"#fff3d5" }}>{row.wins}x</span>
+                  </div>
+                ))}
+                {motmSeasonTop3.length === 0 && <div style={{ marginTop:4, fontWeight:700, color:"#ffe1a0" }}>Nog geen data</div>}
+              </div>
+            </Card>
+          </div>
+        </Panel>
       )}
     </div>
   );

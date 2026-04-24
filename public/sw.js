@@ -1,4 +1,4 @@
-const CACHE_NAME = "rongoe-v3";
+const CACHE_NAME = "rongoe-v4";
 const ASSETS = [
   "/rongoe/",
   "/rongoe/index.html",
@@ -19,6 +19,12 @@ self.addEventListener("activate", event => {
     )
   );
   self.clients.claim();
+});
+
+self.addEventListener("message", event => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("fetch", event => {
