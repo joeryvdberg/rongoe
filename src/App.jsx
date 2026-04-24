@@ -1379,14 +1379,11 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
               flexDirection:"column",
               alignItems:"stretch",
               gap:10,
-              textAlign:"left"
+              textAlign:"center"
             }}
           >
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"center" }}>
               <span style={{ fontFamily:"Bangers, cursive", fontSize:30, letterSpacing:1, color:"#f9fbff" }}>PUBLIEK</span>
-              <span style={{ fontSize:12, color:"#e8eefb", fontWeight:700 }}>
-                {publicVoteOpen ? "sluit stemveld" : "klik om te stemmen"}
-              </span>
             </div>
             {publicVoteOpen && (
               <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
