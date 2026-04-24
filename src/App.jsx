@@ -1363,7 +1363,7 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
             );
           })}
         </div>
-        <Card style={{ marginTop:10, padding:"10px 12px", background:G.paperSoft }}>
+        <div style={{ marginTop:10 }}>
           <button
             onClick={() => setPublicVoteOpen(v => !v)}
             className="card-hover btn-press anim-slidein comic-tile"
@@ -1423,7 +1423,7 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
               </div>
             )}
           </button>
-        </Card>
+        </div>
       </Panel>
 
       <Panel title="BESCHIKBAARHEID" color={G.red} icon="🗓️">
