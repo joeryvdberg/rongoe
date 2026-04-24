@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 
 const SOURCE_URL = "https://www.powerleague.com/nl/competitie?league_id=997ebdeb-bbf2-d0a4-e814-cfa760326bc5&division_id=997ebdeb-bbf2-d0a4-e814-cfa7c0da8fc5";
 const OUT_PATH = new URL("../public/competition-live.json", import.meta.url);
@@ -31,6 +31,20 @@ function parseNlDateTime(dateStr = "", timeStr = "00:00") {
   const [hh, mi] = timeStr.split(":").map(Number);
   if (!dd || !mm || !yyyy) return null;
   return new Date(yyyy, mm - 1, dd, Number.isFinite(hh) ? hh : 0, Number.isFinite(mi) ? mi : 0, 0, 0);
+}
+
+function parseNlDate(dateStr = "") {
+  const [dd, mm, yyyy] = dateStr.split("/").map(Number);
+  if (!dd || !mm || !yyyy) return null;
+  return new Date(yyyy, mm - 1, dd, 12, 0, 0, 0);
+}
+
+function recencyScore(data) {
+  const lastRoundTs = parseNlDate(data?.lastRoundLabel || "")?.getTime() || 0;
+  const totalPlayed = Array.isArray(data?.standings)
+    ? data.standings.reduce((sum, row) => sum + (Number(row.played) || 0), 0)
+    : 0;
+  return { lastRoundTs, totalPlayed };
 }
 
 function extractTeamPairFromLine(line, knownTeams = []) {
@@ -171,6 +185,24 @@ const snapshot = await fetchSnapshot();
 const parsed = parseCompetitionSnapshot(snapshot);
 if (parsed.standings.length < 6 || parsed.nextGames.length < 1 || parsed.lastRoundResults.length < 1) {
   throw new Error("Parsed competition data incomplete; aborting feed update.");
+}
+try {
+  const existingRaw = await readFile(OUT_PATH, "utf-8");
+  const existing = JSON.parse(existingRaw);
+  const current = recencyScore(existing);
+  const incoming = recencyScore(parsed);
+  const isOlderRound = incoming.lastRoundTs < current.lastRoundTs;
+  const isOlderPlayed = incoming.lastRoundTs === current.lastRoundTs && incoming.totalPlayed < current.totalPlayed;
+  if (isOlderRound || isOlderPlayed) {
+    throw new Error("Incoming competition data appears older than current feed; aborting update.");
+  }
+} catch (err) {
+  // If file doesn't exist we allow first write; all other parse/compare errors should fail sync.
+  if (String(err?.message || "").includes("ENOENT")) {
+    // first run, continue
+  } else {
+    throw err;
+  }
 }
 await writeFile(OUT_PATH, JSON.stringify(parsed, null, 2) + "\n", "utf-8");
 console.log("Updated public/competition-live.json");
