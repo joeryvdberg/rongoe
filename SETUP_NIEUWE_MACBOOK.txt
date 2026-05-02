@@ -1,0 +1,33 @@
+Rongoe — nieuwe MacBook (korte stappen)
+========================================
+GitHub: https://github.com/joeryvdberg/rongoe  (branch: main)
+
+1) Software
+   - Node.js LTS: https://nodejs.org
+   - Git: Terminal → xcode-select --install
+
+2) Project binnenhalen (geen handmatig kopiëren van code nodig)
+   mkdir -p ~/Projects
+   cd ~/Projects
+   git clone https://github.com/joeryvdberg/rongoe.git
+   cd rongoe
+
+3) Dependencies
+   npm install
+
+4) .env
+   Voor dit project hoef je normaal GEEN .env te zetten om lokaal te starten:
+   Supabase staat nu in src/App.jsx.
+   (Wil je later overstappen op VITE_* variabelen: maak dan .env en haal de waarden
+   uit Supabase Project Settings → API — zelfde idee als Lyyve.)
+
+5) Starten
+   npm run dev
+   Open de URL die Vite toont (meestal http://localhost:5173 )
+
+6) Optioneel
+   npm run build
+   npm run lint
+
+Deploy
+   GitHub Actions deployt naar Pages na push naar main; check repo Settings → Pages.
