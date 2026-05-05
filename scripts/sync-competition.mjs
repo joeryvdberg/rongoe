@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 
-const SOURCE_URL = "https://www.powerleague.com/nl/competitie?league_id=997ebdeb-bbf2-d0a4-e814-cfa760326bc5&division_id=997ebdeb-bbf2-d0a4-e814-cfa7c0da8fc5";
+const SOURCE_URL = "https://www.powerleague.com/nl/competitie?league_id=fd12d044-1e65-6cbb-ee14-812e80a0f3b6&division_id=fd12d044-1e65-6cbb-ee14-812e285bfab6";
 const OUT_PATH = new URL("../public/competition-live.json", import.meta.url);
 
 function stripActionNoise(s = "") {
@@ -59,7 +59,7 @@ function extractTeamPairFromLine(line, knownTeams = []) {
 function parseCompetitionSnapshot(snapshot) {
   const lines = snapshot.split(/\r?\n/).map(l => l.trim());
 
-  const standings = lines
+  let standings = lines
     .filter(line => /^\|\s*\d+\s*\|/.test(line))
     .map(line => line.split("|").map(c => c.trim()).filter(Boolean))
     .filter(cells => cells.length >= 10)
@@ -76,20 +76,70 @@ function parseCompetitionSnapshot(snapshot) {
       points: Number(cells[9]) || 0,
     }))
     .filter(row => row.club);
+  if (!standings.length) {
+    standings = lines
+      .map(line => {
+        const m = line.match(/^(\d+)\[([^\]]+)\]\([^)]+\)\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(-?\d+)\s+(\d+)$/);
+        if (!m) return null;
+        return {
+          pos: Number(m[1]) || 0,
+          club: cleanTeamName(m[2]),
+          played: Number(m[3]) || 0,
+          won: Number(m[4]) || 0,
+          drawn: Number(m[5]) || 0,
+          lost: Number(m[6]) || 0,
+          gf: Number(m[7]) || 0,
+          ga: Number(m[8]) || 0,
+          gd: Number(m[9]) || 0,
+          points: Number(m[10]) || 0,
+        };
+      })
+      .filter(Boolean);
+  }
   const knownTeams = standings.map(s => s.club);
 
-  const fixtureVsLines = lines.filter(line => line.includes(" vs ") && (line.includes("\">") || line.includes("Glory Boyz")));
-  const fixtureTimes = lines
+  let fixtureVsLines = lines.filter(line => line.includes(" vs ") && (line.includes("\">") || line.includes("Glory Boyz")));
+  let fixtureTimes = lines
     .filter(line => /^\|\s*\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}\s*\|$/.test(line))
     .map(line => line.replace(/\|/g, "").trim());
+  if (!fixtureVsLines.length) {
+    fixtureVsLines = lines.filter(line => /\[[^\]]+\]\([^)]+\)\s*vs\s*\[[^\]]+\]\([^)]+\)\d{2}:\d{2}$/.test(line));
+    fixtureTimes = fixtureVsLines.map(() => "");
+  }
   const nextGamesRaw = fixtureVsLines.slice(0, 12).map((line, i) => {
     const compact = stripActionNoise(line);
     const pair = extractTeamPairFromLine(compact, knownTeams);
     if (!pair) return null;
+    const inlineTime = compact.match(/(\d{2}:\d{2})$/)?.[1] || "";
     const kickoff = fixtureTimes[i] || "";
-    const [date = "", time = ""] = kickoff.split(/\s+/);
+    const [date = "", timeFromKickoff = ""] = kickoff.split(/\s+/);
+    const time = timeFromKickoff || inlineTime;
     return { date, time, home: pair[0], away: pair[1] };
   }).filter(Boolean);
+  if (!nextGamesRaw.length || nextGamesRaw.some(m => !m.date)) {
+    let activeDate = "";
+    const rebuilt = [];
+    lines.forEach(line => {
+      const dateMarker = line.match(/^\*\*(\d{2}\/\d{2}\/\d{4})\*\*$/);
+      if (dateMarker) {
+        activeDate = dateMarker[1];
+        return;
+      }
+      const game = line.match(/^\[([^\]]+)\]\([^)]+\)\s*vs\s*\[([^\]]+)\]\([^)]+\)\s*(?:(\d{2}\/\d{2}\/\d{4})\s+)?(\d{2}:\d{2})$/);
+      if (!game) return;
+      const gameDate = game[3] || activeDate;
+      if (!gameDate) return;
+      rebuilt.push({
+        date: gameDate,
+        time: game[4],
+        home: cleanTeamName(game[1]),
+        away: cleanTeamName(game[2]),
+      });
+    });
+    if (rebuilt.length) {
+      nextGamesRaw.splice(0, nextGamesRaw.length, ...rebuilt);
+    }
+  }
   const nextGamesSeen = new Set();
   const nextGames = nextGamesRaw
     .filter(m => m.date && m.time && m.home && m.away)
@@ -130,7 +180,12 @@ function parseCompetitionSnapshot(snapshot) {
 
   const dateLines = lines
     .filter(line => /^\|\s*\d{2}\/\d{2}\/\d{4}\s*\|$/.test(line))
-    .map(line => line.replace(/\|/g, "").trim());
+    .map(line => line.replace(/\|/g, "").trim())
+    .concat(
+      lines
+        .filter(line => /^\*\*\d{2}\/\d{2}\/\d{4}\*\*$/.test(line))
+        .map(line => line.replace(/\*/g, ""))
+    );
   const today = new Date();
   today.setHours(23, 59, 59, 999);
   const parseNlDate = (s) => {
@@ -183,7 +238,7 @@ async function fetchSnapshot() {
 
 const snapshot = await fetchSnapshot();
 const parsed = parseCompetitionSnapshot(snapshot);
-if (parsed.standings.length < 6 || parsed.nextGames.length < 1 || parsed.lastRoundResults.length < 1) {
+if (parsed.standings.length < 6 || parsed.nextGames.length < 1) {
   throw new Error("Parsed competition data incomplete; aborting feed update.");
 }
 try {
