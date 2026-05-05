@@ -349,6 +349,7 @@ function buildSchedule(players, availability, matchDates) {
     const toPlay = Math.min(MAX_FIELD, field.length);
     const toSkip = field.length - toPlay;
     const wantFree = field.filter(p => availability[p.id]?.[di]);
+    const wantFreeIds = new Set(wantFree.map(p => p.id));
     let skipped = [];
 
     if (toSkip > 0) {
@@ -365,6 +366,7 @@ function buildSchedule(players, availability, matchDates) {
 
     const skippedIds = new Set(skipped.map(p => p.id));
     const playing = field.filter(p => !skippedIds.has(p.id));
+    const forcedFreePlayers = playing.filter(p => wantFreeIds.has(p.id));
     playing.forEach(p => { plays[p.id]++; });
     const keeperOut = keeper ? !!(availability[keeper.id]?.[di]) : false;
 
@@ -372,6 +374,8 @@ function buildSchedule(players, availability, matchDates) {
       date, di,
       keeper: keeper && !keeperOut ? keeper : null,
       players: playing, skipped,
+      wantFreeCount: wantFree.length,
+      forcedFreePlayerIds: forcedFreePlayers.map(p => p.id),
       honored: skipped.filter(p => wantFree.some(w => w.id === p.id)).length,
       missed: wantFree.filter(p => !skippedIds.has(p.id)).length,
     };
@@ -1632,7 +1636,10 @@ function RosterView({ players, sched, avail, matchDates }) {
                       <div style={{ fontFamily:"Bangers, cursive", fontSize:15, letterSpacing:1, color:G.green, marginBottom:7 }}>✓ AANWEZIG</div>
                       <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
                         {entry.keeper && <Tag bg={G.orange}>🧤 {entry.keeper.name}</Tag>}
-                        {entry.players?.map(p => <Tag key={p.id} bg={G.green}>⚽ {p.name}</Tag>)}
+                        {entry.players?.map(p => {
+                          const forcedFree = entry.wantFreeCount >= 3 && entry.forcedFreePlayerIds?.includes(p.id);
+                          return <Tag key={p.id} bg={forcedFree ? G.red : G.green}>⚽ {p.name}{forcedFree ? " ⚠️" : ""}</Tag>;
+                        })}
                       </div>
                     </div>
                     {entry.skipped?.length > 0 && (
@@ -1889,7 +1896,10 @@ function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule
                     </div>
                     <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:entry.skipped?.length?8:0 }}>
                       {entry.keeper && <Tag bg={G.orange}>🧤 {entry.keeper.name}</Tag>}
-                      {entry.players?.map(p => <Tag key={p.id} bg={G.green}>⚽ {p.name}</Tag>)}
+                      {entry.players?.map(p => {
+                        const forcedFree = entry.wantFreeCount >= 3 && entry.forcedFreePlayerIds?.includes(p.id);
+                        return <Tag key={p.id} bg={forcedFree ? G.red : G.green}>⚽ {p.name}{forcedFree ? " ⚠️" : ""}</Tag>;
+                      })}
                     </div>
                     {entry.skipped?.length>0 && (
                       <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
