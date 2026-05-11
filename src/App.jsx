@@ -1609,12 +1609,30 @@ function CompetitionView({ competitionData, competitionUnlocked, refreshCompetit
           </div>
           {competitionData.lastRoundResults.map((r, i) => {
             return (
-              <Card key={r.date + i} style={{ padding: "10px 12px", background: G.paperSoft }}>
+              <Card key={`${r.home}-${r.away}-${i}`} style={{ padding: "10px 12px", background: G.paperSoft }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                  <div style={{ fontFamily: "Bangers, cursive", fontSize: 18, letterSpacing: 0.6, lineHeight: 1.3 }}>
-                    <span style={{ fontWeight: 500 }}>{r.home}</span>
-                    <span style={{ fontWeight: 700 }}> {r.homeScore} - {r.awayScore} </span>
-                    <span style={{ fontWeight: 500 }}>{r.away}</span>
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", lineHeight: 1.35 }}>
+                    <span style={{ fontFamily: "Bangers, cursive", fontSize: 18, letterSpacing: 0.6, fontWeight: 500 }}>{r.home}</span>
+                    <span
+                      style={{
+                        fontFamily: "'Bebas Neue', sans-serif",
+                        fontSize: 26,
+                        letterSpacing: "0.16em",
+                        fontWeight: 700,
+                        padding: "4px 12px",
+                        borderRadius: 8,
+                        border: "2.5px solid " + G.ink,
+                        boxShadow: "2px 2px 0 " + G.ink,
+                        background: "rgba(244,239,227,0.10)",
+                        fontVariantNumeric: "tabular-nums",
+                        lineHeight: 1,
+                        color: G.ink,
+                      }}
+                      aria-label={`Eindstand ${r.homeScore} tegen ${r.awayScore}`}
+                    >
+                      {r.homeScore} – {r.awayScore}
+                    </span>
+                    <span style={{ fontFamily: "Bangers, cursive", fontSize: 18, letterSpacing: 0.6, fontWeight: 500 }}>{r.away}</span>
                   </div>
                 </div>
               </Card>
