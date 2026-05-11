@@ -6,93 +6,46 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 7-5-2026, 16:24:54",
-  "topTeams": [
-    {
-      "pos": 1,
-      "club": "De Meer",
-      "played": 1,
-      "won": 1,
-      "points": 3
-    },
-    {
-      "pos": 2,
-      "club": "Fiorentina Turner",
-      "played": 1,
-      "won": 0,
-      "points": 1
-    },
-    {
-      "pos": 3,
-      "club": "The Mohicans",
-      "played": 1,
-      "won": 0,
-      "points": 1
-    }
-  ],
+  "updatedLabel": "Live sync op 11-5-2026, 15:10:50",
   "standings": [
     {
       "pos": 1,
-      "club": "De Meer",
+      "club": "Le Coq Sportif",
       "played": 1,
       "won": 1,
       "drawn": 0,
       "lost": 0,
-      "gf": 1,
-      "ga": 0,
-      "gd": 1,
+      "gf": 8,
+      "ga": 4,
+      "gd": 4,
       "points": 3
     },
     {
       "pos": 2,
       "club": "Fiorentina Turner",
       "played": 1,
-      "won": 0,
-      "drawn": 1,
+      "won": 1,
+      "drawn": 0,
       "lost": 0,
-      "gf": 0,
-      "ga": 0,
-      "gd": 0,
-      "points": 1
+      "gf": 9,
+      "ga": 8,
+      "gd": 1,
+      "points": 3
     },
     {
       "pos": 3,
-      "club": "The Mohicans",
+      "club": "De Hertenjagers Reunited",
       "played": 1,
-      "won": 0,
-      "drawn": 1,
+      "won": 1,
+      "drawn": 0,
       "lost": 0,
-      "gf": 0,
-      "ga": 0,
-      "gd": 0,
-      "points": 1
+      "gf": 3,
+      "ga": 2,
+      "gd": 1,
+      "points": 3
     },
     {
       "pos": 4,
-      "club": "Los Fuegos",
-      "played": 1,
-      "won": 0,
-      "drawn": 1,
-      "lost": 0,
-      "gf": 0,
-      "ga": 0,
-      "gd": 0,
-      "points": 1
-    },
-    {
-      "pos": 5,
-      "club": "De Hertenjagers Reunited",
-      "played": 1,
-      "won": 0,
-      "drawn": 1,
-      "lost": 0,
-      "gf": 0,
-      "ga": 0,
-      "gd": 0,
-      "points": 1
-    },
-    {
-      "pos": 6,
       "club": "The Big 5",
       "played": 0,
       "won": 0,
@@ -104,7 +57,7 @@
       "points": 0
     },
     {
-      "pos": 7,
+      "pos": 5,
       "club": "Glory Boyz FC",
       "played": 0,
       "won": 0,
@@ -114,6 +67,65 @@
       "ga": 0,
       "gd": 0,
       "points": 0
+    },
+    {
+      "pos": 6,
+      "club": "The Mohicans",
+      "played": 1,
+      "won": 0,
+      "drawn": 0,
+      "lost": 1,
+      "gf": 8,
+      "ga": 9,
+      "gd": -1,
+      "points": 0
+    },
+    {
+      "pos": 7,
+      "club": "Los Fuegos",
+      "played": 1,
+      "won": 0,
+      "drawn": 0,
+      "lost": 1,
+      "gf": 2,
+      "ga": 3,
+      "gd": -1,
+      "points": 0
+    },
+    {
+      "pos": 8,
+      "club": "De Meer",
+      "played": 1,
+      "won": 0,
+      "drawn": 0,
+      "lost": 1,
+      "gf": 4,
+      "ga": 8,
+      "gd": -4,
+      "points": 0
+    }
+  ],
+  "topTeams": [
+    {
+      "pos": 1,
+      "club": "Le Coq Sportif",
+      "played": 1,
+      "won": 1,
+      "points": 3
+    },
+    {
+      "pos": 2,
+      "club": "Fiorentina Turner",
+      "played": 1,
+      "won": 1,
+      "points": 3
+    },
+    {
+      "pos": 3,
+      "club": "De Hertenjagers Reunited",
+      "played": 1,
+      "won": 1,
+      "points": 3
     }
   ],
   "nextGames": [
@@ -143,15 +155,15 @@
     },
     {
       "date": "28/05/2026",
-      "time": "19:00",
-      "home": "Glory Boyz FC",
-      "away": "De Meer"
+      "time": "15:00",
+      "home": "The Mohicans",
+      "away": "Le Coq Sportif"
     },
     {
       "date": "28/05/2026",
       "time": "19:00",
-      "home": "The Mohicans",
-      "away": "Le Coq Sportif"
+      "home": "Glory Boyz FC",
+      "away": "De Meer"
     },
     {
       "date": "28/05/2026",
@@ -167,5 +179,24 @@
     }
   ],
   "lastRoundLabel": "07/05/2026",
-  "lastRoundResults": []
+  "lastRoundResults": [
+    {
+      "home": "Fiorentina Turner",
+      "homeScore": 9,
+      "awayScore": 8,
+      "away": "The Mohicans"
+    },
+    {
+      "home": "Le Coq Sportif",
+      "homeScore": 8,
+      "awayScore": 4,
+      "away": "De Meer"
+    },
+    {
+      "home": "Los Fuegos",
+      "homeScore": 2,
+      "awayScore": 3,
+      "away": "De Hertenjagers Reunited"
+    }
+  ]
 }
