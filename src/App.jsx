@@ -1556,7 +1556,7 @@ function CompetitionView({ competitionData, competitionUnlocked, refreshCompetit
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {competitionData.nextGames.map((m, i) => (
             <Card key={m.date + m.time + i} style={{ padding: "10px 12px", background: G.paperSoft }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
                 <div style={{ fontFamily: "Bangers, cursive", fontSize: 18, letterSpacing: 0.6, fontWeight: 500, lineHeight: 1.3 }}>
                   <span style={{ fontWeight: 500 }}>{m.home}</span>
                   <span style={{ fontWeight: 700 }}> VS </span>
@@ -1610,9 +1610,9 @@ function CompetitionView({ competitionData, competitionUnlocked, refreshCompetit
           {competitionData.lastRoundResults.map((r, i) => {
             return (
               <Card key={`${r.home}-${r.away}-${i}`} style={{ padding: "10px 12px", background: G.paperSoft }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", lineHeight: 1.35 }}>
-                    <span style={{ fontFamily: "Bangers, cursive", fontSize: 18, letterSpacing: 0.6, fontWeight: 500 }}>{r.home}</span>
+                <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+                  <div style={{ display: "inline-flex", flexWrap: "nowrap", alignItems: "center", gap: "8px 10px", whiteSpace: "nowrap", lineHeight: 1.35, minHeight: "2.25rem" }}>
+                    <span style={{ fontFamily: "Bangers, cursive", fontSize: 18, letterSpacing: 0.6, fontWeight: 500, flexShrink: 0 }}>{r.home}</span>
                     <span
                       style={{
                         fontFamily: "'Bebas Neue', sans-serif",
@@ -1627,12 +1627,13 @@ function CompetitionView({ competitionData, competitionUnlocked, refreshCompetit
                         fontVariantNumeric: "tabular-nums",
                         lineHeight: 1,
                         color: G.ink,
+                        flexShrink: 0,
                       }}
                       aria-label={`Eindstand ${r.homeScore} tegen ${r.awayScore}`}
                     >
                       {r.homeScore} – {r.awayScore}
                     </span>
-                    <span style={{ fontFamily: "Bangers, cursive", fontSize: 18, letterSpacing: 0.6, fontWeight: 500 }}>{r.away}</span>
+                    <span style={{ fontFamily: "Bangers, cursive", fontSize: 18, letterSpacing: 0.6, fontWeight: 500, flexShrink: 0 }}>{r.away}</span>
                   </div>
                 </div>
               </Card>
