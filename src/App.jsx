@@ -189,6 +189,16 @@ function buildSchedule(players, availability, matchDates) {
   return sched;
 }
 
+/** Aantal spelers op het veld bij een volledige opstelling (zelfde logica als buildSchedule). */
+function idealRosterHeadcount(players, availability, di) {
+  const field = players.filter(p => p.role === "veld");
+  const keeper = players.find(p => p.role === "keeper");
+  const MAX_FIELD = 7;
+  const fieldOnPitch = Math.min(MAX_FIELD, field.length);
+  const keeperOut = keeper ? !!(availability[keeper.id]?.[di]) : false;
+  return (keeper && !keeperOut ? 1 : 0) + fieldOnPitch;
+}
+
 /** Spelers die op het rooster staan voor deze speeldag (keeper + veld). */
 function rosterPlayerIdsFromEntry(entry) {
   if (!entry) return [];
@@ -1030,8 +1040,13 @@ export default function App() {
     if (!nm) return null;
     const playerIds = rosterPlayerIdsFromEntry(nm.entry);
     if (!playerIds.length) return null;
-    return { date: nm.date, playerIds };
-  }, [matchDates, sched]);
+    const di = matchDates.indexOf(nm.date);
+    const ideal = di >= 0 ? idealRosterHeadcount(players, avail, di) : 0;
+    const entry = nm.entry;
+    const actual = (entry.keeper ? 1 : 0) + (entry.players?.length || 0);
+    const shortBy = Math.max(0, ideal - actual);
+    return { date: nm.date, playerIds, shortBy, ideal, actual };
+  }, [matchDates, sched, players, avail]);
 
   const navItems = [
     { id: "home",   label: "SPELERS", icon: "" },
@@ -1296,6 +1311,24 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
               Sta je op het rooster voor de eerstvolgende wedstrijd (<strong>{fmtDate(nextRosterInfo.date)}</strong>)? Tik op <strong>BEVESTIG AANWEZIG</strong> op jouw tegel.
             </p>
           </Card>
+        )}
+        {nextRosterInfo && sched && nextRosterInfo.shortBy > 0 && (
+          <div
+            style={{
+              marginBottom: 10,
+              padding: "8px 11px",
+              borderRadius: 8,
+              border: "1px solid rgba(212, 90, 74, 0.28)",
+              background: "rgba(212, 90, 74, 0.06)",
+              fontSize: 12,
+              lineHeight: 1.55,
+              color: "#b9a9a3",
+            }}
+          >
+            Let op: volgens het rooster staan er nu <strong style={{ color: "#c9a89e" }}>{nextRosterInfo.actual}</strong> spelers voor{" "}
+            <strong style={{ color: "#c9a89e" }}>{fmtDate(nextRosterInfo.date)}</strong> op de lijst; bij een volle opstelling zouden dat{" "}
+            <strong style={{ color: "#c9a89e" }}>{nextRosterInfo.ideal}</strong> zijn ({nextRosterInfo.shortBy === 1 ? "1 iemand" : `${nextRosterInfo.shortBy} mensen`} te weinig).
+          </div>
         )}
         <div className="home-player-grid">
           {players.map((p, i) => {
