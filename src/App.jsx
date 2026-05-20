@@ -1308,7 +1308,7 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
         {nextRosterInfo && sched && (
           <Card style={{ padding: "10px 12px", background: G.paperSoft, boxShadow: "none", marginBottom: 10 }}>
             <p style={{ fontSize: 13, lineHeight: 1.65, margin: 0 }}>
-              Sta je op het rooster voor de eerstvolgende wedstrijd (<strong>{fmtDate(nextRosterInfo.date)}</strong>)? Tik op <strong>BEVESTIG AANWEZIG</strong> op jouw tegel.
+              Sta je bij de eerstvolgende wedstrijd (<strong>{fmtDate(nextRosterInfo.date)}</strong>) op het rooster? Zet dan het vinkje <strong>Ik ben erbij</strong> op je eigen tegel — even ter bevestiging voor het team.
             </p>
           </Card>
         )}
@@ -1344,7 +1344,7 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
                 boxShadow:"0 10px 20px rgba(0,0,0,0.30), 3px 3px 0 #0d1118", padding:"12px 8px", cursor:"pointer",
                 display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6,
                 aspectRatio:"1 / 1",
-                paddingBottom: onNextRoster && !confirmed ? 44 : 12,
+                paddingBottom: onNextRoster ? 36 : 12,
               }}>
                 <span style={{
                   display:"inline-flex", alignItems:"center", justifyContent:"center",
@@ -1361,38 +1361,79 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
               </button>
               {onNextRoster && confirmed && (
                 <div
-                  title="Aanwezigheid bevestigd"
+                  title="Opgeslagen"
                   style={{
                     position: "absolute",
-                    top: 6,
-                    right: 6,
-                    fontFamily: "Bangers, cursive",
-                    fontSize: 14,
-                    letterSpacing: 0.5,
-                    background: G.green,
-                    color: "#0d1118",
-                    border: "2px solid #0d1118",
-                    borderRadius: 999,
-                    width: 28,
-                    height: 28,
+                    bottom: 7,
+                    left: 8,
+                    right: 8,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    boxShadow: "2px 2px 0 #0d1118",
+                    gap: 6,
                     pointerEvents: "none",
                     zIndex: 4,
                   }}
-                >✓</div>
+                >
+                  <span
+                    style={{
+                      width: 14,
+                      height: 14,
+                      borderRadius: 3,
+                      border: "1px solid rgba(111, 207, 151, 0.55)",
+                      background: "rgba(67, 185, 123, 0.22)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 9,
+                      lineHeight: 1,
+                      color: "#b8e8cc",
+                    }}
+                  >✓</span>
+                  <span style={{ fontFamily: "'Source Sans 3', sans-serif", fontSize: 10.5, fontWeight: 600, letterSpacing: 0.02, color: "rgba(236, 244, 255, 0.78)" }}>
+                    er bij
+                  </span>
+                </div>
               )}
               {onNextRoster && !confirmed && (
-                <div style={{ position: "absolute", left: 6, right: 6, bottom: 6, zIndex: 5 }}>
-                  <Btn
-                    small
-                    bg={G.gold}
+                <div style={{ position: "absolute", left: 8, right: 8, bottom: 7, zIndex: 5 }}>
+                  <button
+                    type="button"
                     onClick={() => onConfirmMatchPresence(nextRosterInfo.date, p.id)}
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "flex-start",
+                      gap: 8,
+                      padding: "5px 7px",
+                      borderRadius: 8,
+                      border: "1px solid rgba(255, 255, 255, 0.22)",
+                      background: "rgba(13, 17, 24, 0.35)",
+                      boxShadow: "none",
+                      cursor: "pointer",
+                      fontFamily: "'Source Sans 3', sans-serif",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      letterSpacing: 0.01,
+                      color: "rgba(241, 245, 250, 0.88)",
+                      textAlign: "left",
+                    }}
                   >
-                    BEVESTIG AANWEZIG
-                  </Btn>
+                    <span
+                      aria-hidden
+                      style={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: 3,
+                        border: "1px solid rgba(255, 255, 255, 0.38)",
+                        background: "rgba(0, 0, 0, 0.12)",
+                        flexShrink: 0,
+                        display: "inline-block",
+                      }}
+                    />
+                    <span>Ik ben erbij</span>
+                  </button>
                 </div>
               )}
             </div>

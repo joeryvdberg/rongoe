@@ -32,9 +32,27 @@ GitHub: https://github.com/joeryvdberg/rongoe  (branch: main)
 Deploy
    GitHub Actions deployt naar Pages na push naar main; check repo Settings → Pages.
 
-7) Supabase — tabel voor “aanwezig bevestigen” (eerstvolgende wedstrijd)
-   In Supabase → SQL Editor, voer uit:
+────────────────────────────────────────────────────────────────────────
+7) Supabase — “Ik ben erbij” (aanwezigheid voor de eerstvolgende wedstrijd)
+────────────────────────────────────────────────────────────────────────
 
+Waarom?
+   De app slaat op wie op het rooster staat en zich heeft gemeld voor de eerstvolgende
+   wedstrijd. Daarvoor is één extra tabel in Supabase nodig.
+
+Stap A — Log in op Supabase
+   1. Ga naar https://supabase.com en open jouw project (hetzelfde project als waar
+      je players / schedule al in staan).
+
+Stap B — Open de SQL Editor
+   2. In het linkermenu: klik op “SQL Editor”.
+   3. Klik op “New query” (of een leeg query-venster).
+
+Stap C — Plak dit script en run het
+   4. Plak onderstaande tekst in het venster.
+   5. Klik op “Run” (of Cmd/Ctrl + Enter).
+
+   ----- begin SQL -----
    create table if not exists public.match_presence (
      match_date text not null,
      player_id bigint not null references public.players(id) on delete cascade,
@@ -44,8 +62,20 @@ Deploy
 
    alter table public.match_presence enable row level security;
 
+   drop policy if exists "match_presence_anon_all" on public.match_presence;
+
    create policy "match_presence_anon_all"
      on public.match_presence for all
      using (true) with check (true);
+   ----- einde SQL -----
 
-   (Zelfde idee als je andere tabellen: anon key uit de app mag lezen/schrijven.)
+   (De policy zorgt dat de app met dezelfde “anon” API-sleutel als de rest mag lezen
+   en schrijven — net als bij je andere tabellen.)
+
+Stap D — Controleren
+   6. Ga naar “Table Editor” in het menu.
+   7. Je zou nu de tabel “match_presence” moeten zien.
+   8. Na het eerste vinkje in de app verschijnt hier een rij (match_date + player_id).
+
+Klaar. Geen aparte API-keys nodig als de rest van de app al tegen dit project praat.
+
