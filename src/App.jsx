@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { parseCompetitionSnapshot, parseNlDateTime } from "./competition-parse.js";
 
@@ -187,6 +187,34 @@ function buildSchedule(players, availability, matchDates) {
     };
   });
   return sched;
+}
+
+/** Spelers die op het rooster staan voor deze speeldag (keeper + veld). */
+function rosterPlayerIdsFromEntry(entry) {
+  if (!entry) return [];
+  const ids = [];
+  if (entry.keeper?.id != null) ids.push(entry.keeper.id);
+  (entry.players || []).forEach(p => {
+    if (p?.id != null) ids.push(p.id);
+  });
+  return ids;
+}
+
+/** Eerstvolgende speeldag (vanaf vandaag) waar een rooster-entry met opstelling bestaat. */
+function getNextRosterMatch(matchDates, sched) {
+  if (!sched || !matchDates?.length) return null;
+  const startToday = new Date();
+  startToday.setHours(0, 0, 0, 0);
+  for (const date of matchDates) {
+    const d = new Date(date + "T12:00:00");
+    if (Number.isNaN(d.getTime()) || d < startToday) continue;
+    const entry = sched[date];
+    if (!entry) continue;
+    const hasSquad = !!(entry.keeper || (entry.players && entry.players.length > 0));
+    if (!hasSquad) continue;
+    return { date, entry };
+  }
+  return null;
 }
 
 // ── STYLES ────────────────────────────────────────────────────────────────────
@@ -568,6 +596,8 @@ export default function App() {
   const [competitionData, setCompetitionData] = useState(COMPETITION_INFO);
   const [competitionRefreshing, setCompetitionRefreshing] = useState(false);
   const [motmVotes, setMotmVotes] = useState({});
+  /** match_date -> { [playerId string]: true } */
+  const [matchPresence, setMatchPresence] = useState({});
 
   function showFloat(text, color) {
     setFloatText({ text, color });
@@ -790,6 +820,20 @@ export default function App() {
           });
           setMotmVotes(votesObj);
         }
+
+        const { data: mpData, error: mpErr } = await db.from("match_presence").select("match_date,player_id");
+        if (!mpErr && Array.isArray(mpData)) {
+          const mp = {};
+          mpData.forEach(row => {
+            const d = row.match_date;
+            const pid = String(row.player_id);
+            if (!mp[d]) mp[d] = {};
+            mp[d][pid] = true;
+          });
+          setMatchPresence(mp);
+        } else if (mpErr) {
+          console.warn("match_presence niet geladen (optionele tabel):", mpErr.message || mpErr);
+        }
       } catch (e) {
         console.error("Load error:", e);
       }
@@ -888,6 +932,8 @@ export default function App() {
     await db.from("players").delete().eq("id", id);
     await db.from("availability").delete().eq("player_id", id);
     await db.from("player_stats").delete().eq("player_id", id);
+    const { error: mpDelErr } = await db.from("match_presence").delete().eq("player_id", id);
+    if (mpDelErr) console.warn("match_presence delete:", mpDelErr);
     showComicBurst(["POW"]);
   }
 
@@ -943,6 +989,31 @@ export default function App() {
     notify("Ruilverzoek afgewezen.", true);
   }
 
+  async function confirmMatchPresence(matchDate, playerId) {
+    const pidStr = String(playerId);
+    setMatchPresence(prev => ({
+      ...prev,
+      [matchDate]: { ...(prev[matchDate] || {}), [pidStr]: true },
+    }));
+    const { error } = await db.from("match_presence").upsert(
+      { match_date: matchDate, player_id: playerId },
+      { onConflict: "match_date,player_id" }
+    );
+    if (error) {
+      console.error("match_presence upsert:", error);
+      notify("Kon bevestiging niet opslaan. Controleer of de tabel match_presence bestaat in Supabase.", true);
+      setMatchPresence(prev => {
+        const n = { ...prev };
+        const inner = { ...(n[matchDate] || {}) };
+        delete inner[pidStr];
+        n[matchDate] = inner;
+        return n;
+      });
+      return;
+    }
+    showFloat("CHECK!", G.green);
+  }
+
   function mySchedule(pid) {
     if (!sched) return [];
     return matchDates.map((date, i) => {
@@ -953,6 +1024,14 @@ export default function App() {
   }
 
   const myOffers = activePlayer ? swapOffers.filter(o => o.toId === activePlayer.id) : [];
+
+  const nextRosterInfo = useMemo(() => {
+    const nm = getNextRosterMatch(matchDates, sched);
+    if (!nm) return null;
+    const playerIds = rosterPlayerIdsFromEntry(nm.entry);
+    if (!playerIds.length) return null;
+    return { date: nm.date, playerIds };
+  }, [matchDates, sched]);
 
   const navItems = [
     { id: "home",   label: "SPELERS", icon: "" },
@@ -1094,6 +1173,9 @@ export default function App() {
               motmSeasonTop3={motmSeasonTop3}
               motmVotesForRound={motmVotesForRound}
               onCastPublicMotmVote={castPublicMotmVote}
+              nextRosterInfo={nextRosterInfo}
+              matchPresence={matchPresence}
+              onConfirmMatchPresence={confirmMatchPresence}
             />
           )}
           {view === "roster" && (
@@ -1149,7 +1231,7 @@ export default function App() {
 }
 
 // ── HOME VIEW ─────────────────────────────────────────────────────────────────
-function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData, motmWeekLabel, motmWinner, motmWinnerVotes, motmSeasonLeader, motmSeasonLeaderWins, motmSeasonTop3, motmVotesForRound, onCastPublicMotmVote }) {
+function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData, motmWeekLabel, motmWinner, motmWinnerVotes, motmSeasonLeader, motmSeasonLeaderWins, motmSeasonTop3, motmVotesForRound, onCastPublicMotmVote, nextRosterInfo, matchPresence, onConfirmMatchPresence }) {
   const comicTileGradients = [
     "linear-gradient(160deg, #57b8ff, #318fdb)",
     "linear-gradient(160deg, #ffb347, #f48a1f)",
@@ -1208,9 +1290,19 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
         </Panel>
       )}
       <Panel title="WIE BEN JIJ?" color={G.blue} icon="👤">
+        {nextRosterInfo && sched && (
+          <Card style={{ padding: "10px 12px", background: G.paperSoft, boxShadow: "none", marginBottom: 10 }}>
+            <p style={{ fontSize: 13, lineHeight: 1.65, margin: 0 }}>
+              Sta je op het rooster voor de eerstvolgende wedstrijd (<strong>{fmtDate(nextRosterInfo.date)}</strong>)? Tik op <strong>BEVESTIG AANWEZIG</strong> op jouw tegel.
+            </p>
+          </Card>
+        )}
         <div className="home-player-grid">
           {players.map((p, i) => {
             const tileBg = comicTileGradients[i % comicTileGradients.length];
+            const pidStr = String(p.id);
+            const onNextRoster = !!(nextRosterInfo?.playerIds.some(id => String(id) === pidStr));
+            const confirmed = !!(nextRosterInfo && matchPresence[nextRosterInfo.date]?.[pidStr]);
             return (
             <div key={p.id} style={{ position:"relative" }}>
               <button onClick={() => { onPlayerTileClick?.(p); setActivePlayer(p); setView("player"); }} className="card-hover btn-press anim-slidein comic-tile" style={{ animationDelay:(i*0.06)+"s",
@@ -1219,6 +1311,7 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
                 boxShadow:"0 10px 20px rgba(0,0,0,0.30), 3px 3px 0 #0d1118", padding:"12px 8px", cursor:"pointer",
                 display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6,
                 aspectRatio:"1 / 1",
+                paddingBottom: onNextRoster && !confirmed ? 44 : 12,
               }}>
                 <span style={{
                   display:"inline-flex", alignItems:"center", justifyContent:"center",
@@ -1233,6 +1326,42 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
                   textAlign:"center", color:"#f9fbff", textShadow:"0 2px 6px rgba(0,0,0,0.35)"
                 }}>{p.name}</span>
               </button>
+              {onNextRoster && confirmed && (
+                <div
+                  title="Aanwezigheid bevestigd"
+                  style={{
+                    position: "absolute",
+                    top: 6,
+                    right: 6,
+                    fontFamily: "Bangers, cursive",
+                    fontSize: 14,
+                    letterSpacing: 0.5,
+                    background: G.green,
+                    color: "#0d1118",
+                    border: "2px solid #0d1118",
+                    borderRadius: 999,
+                    width: 28,
+                    height: 28,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "2px 2px 0 #0d1118",
+                    pointerEvents: "none",
+                    zIndex: 4,
+                  }}
+                >✓</div>
+              )}
+              {onNextRoster && !confirmed && (
+                <div style={{ position: "absolute", left: 6, right: 6, bottom: 6, zIndex: 5 }}>
+                  <Btn
+                    small
+                    bg={G.gold}
+                    onClick={() => onConfirmMatchPresence(nextRosterInfo.date, p.id)}
+                  >
+                    BEVESTIG AANWEZIG
+                  </Btn>
+                </div>
+              )}
             </div>
             );
           })}

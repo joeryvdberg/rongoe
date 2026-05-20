@@ -31,3 +31,21 @@ GitHub: https://github.com/joeryvdberg/rongoe  (branch: main)
 
 Deploy
    GitHub Actions deployt naar Pages na push naar main; check repo Settings → Pages.
+
+7) Supabase — tabel voor “aanwezig bevestigen” (eerstvolgende wedstrijd)
+   In Supabase → SQL Editor, voer uit:
+
+   create table if not exists public.match_presence (
+     match_date text not null,
+     player_id bigint not null references public.players(id) on delete cascade,
+     confirmed_at timestamptz not null default now(),
+     primary key (match_date, player_id)
+   );
+
+   alter table public.match_presence enable row level security;
+
+   create policy "match_presence_anon_all"
+     on public.match_presence for all
+     using (true) with check (true);
+
+   (Zelfde idee als je andere tabellen: anon key uit de app mag lezen/schrijven.)
