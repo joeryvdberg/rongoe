@@ -6,7 +6,7 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 22-5-2026, 09:47:57",
+  "updatedLabel": "Live sync op 22-5-2026, 12:09:19",
   "standings": [
     {
       "pos": 1,
@@ -22,18 +22,6 @@
     },
     {
       "pos": 2,
-      "club": "De Hertenjagers Reunited",
-      "played": 2,
-      "won": 2,
-      "drawn": 0,
-      "lost": 0,
-      "gf": 10,
-      "ga": 8,
-      "gd": 2,
-      "points": 6
-    },
-    {
-      "pos": 3,
       "club": "Fiorentina Turner",
       "played": 2,
       "won": 1,
@@ -45,7 +33,7 @@
       "points": 4
     },
     {
-      "pos": 4,
+      "pos": 3,
       "club": "De Meer",
       "played": 2,
       "won": 1,
@@ -57,7 +45,31 @@
       "points": 3
     },
     {
+      "pos": 4,
+      "club": "The Mohicans",
+      "played": 2,
+      "won": 1,
+      "drawn": 0,
+      "lost": 1,
+      "gf": 15,
+      "ga": 15,
+      "gd": 0,
+      "points": 3
+    },
+    {
       "pos": 5,
+      "club": "De Hertenjagers Reunited",
+      "played": 2,
+      "won": 1,
+      "drawn": 0,
+      "lost": 1,
+      "gf": 9,
+      "ga": 9,
+      "gd": 0,
+      "points": 3
+    },
+    {
+      "pos": 6,
       "club": "Glory Boyz FC",
       "played": 1,
       "won": 0,
@@ -67,18 +79,6 @@
       "ga": 5,
       "gd": 0,
       "points": 1
-    },
-    {
-      "pos": 6,
-      "club": "The Mohicans",
-      "played": 2,
-      "won": 0,
-      "drawn": 0,
-      "lost": 2,
-      "gf": 14,
-      "ga": 16,
-      "gd": -2,
-      "points": 0
     },
     {
       "pos": 7,
@@ -115,17 +115,17 @@
     },
     {
       "pos": 2,
-      "club": "De Hertenjagers Reunited",
-      "played": 2,
-      "won": 2,
-      "points": 6
-    },
-    {
-      "pos": 3,
       "club": "Fiorentina Turner",
       "played": 2,
       "won": 1,
       "points": 4
+    },
+    {
+      "pos": 3,
+      "club": "De Meer",
+      "played": 2,
+      "won": 1,
+      "points": 3
     }
   ],
   "nextGames": [
@@ -200,8 +200,8 @@
     },
     {
       "home": "De Hertenjagers Reunited",
-      "homeScore": 7,
-      "awayScore": 6,
+      "homeScore": 6,
+      "awayScore": 7,
       "away": "The Mohicans"
     }
   ]
