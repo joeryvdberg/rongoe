@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { parseCompetitionSnapshot, parseNlDateTime } from "./competition-parse.js";
+import { parseCompetitionSnapshot, parseNlDateTime, pickFresherCompetitionPayload } from "./competition-parse.js";
 
 // ── SUPABASE ──────────────────────────────────────────────────────────────────
 const SUPABASE_URL = "https://egdsaevqmnwelliroztr.supabase.co";
@@ -620,46 +620,71 @@ export default function App() {
     }
   }
 
+  function buildCompetitionPatch(parsed, refreshedAt, sourceKind) {
+    const topTeams = (parsed.topTeams || []).length
+      ? parsed.topTeams
+      : parsed.standings.slice(0, 3).map(t => ({ pos: t.pos, club: t.club, played: t.played, won: t.won, points: t.points }));
+    const prefix = sourceKind === "live" ? "Live van Powerleague · " : "Uit cache · ";
+    return {
+      standings: parsed.standings,
+      topTeams,
+      nextGames: parsed.nextGames,
+      lastRoundLabel: parsed.lastRoundLabel,
+      lastRoundResults: parsed.lastRoundResults,
+      updatedLabel: prefix + refreshedAt,
+    };
+  }
+
   async function refreshCompetitionData({ silent = false } = {}) {
     if (competitionRefreshing) return;
     setCompetitionRefreshing(true);
+    const refreshedAt = new Date().toLocaleString("nl-NL");
+    const sourceUrl = competitionData.sourceUrl;
+
     try {
-      const refreshedAt = new Date().toLocaleString("nl-NL");
-      let nextData = null;
-      try {
-        const feedData = await fetchCompetitionFromFeed();
-        nextData = {
-          standings: feedData.standings,
-          topTeams: (feedData.topTeams || []).length ? feedData.topTeams : feedData.standings.slice(0, 3).map(t => ({ pos: t.pos, club: t.club, played: t.played, won: t.won, points: t.points })),
-          nextGames: feedData.nextGames,
-          lastRoundLabel: feedData.lastRoundLabel,
-          lastRoundResults: feedData.lastRoundResults,
-        };
-      } catch (feedErr) {
-        console.warn("Competition feed failed, falling back to snapshot parser:", feedErr);
-        const snapshot = await fetchCompetitionSnapshot(competitionData.sourceUrl);
-        const parsed = parseCompetitionSnapshot(snapshot);
-        nextData = {
-          standings: parsed.standings,
-          topTeams: parsed.topTeams,
-          nextGames: parsed.nextGames,
-          lastRoundLabel: parsed.lastRoundLabel,
-          lastRoundResults: parsed.lastRoundResults,
-        };
+      let liveParsed = null;
+      let feedParsed = null;
+      let liveErr = null;
+      let feedErr = null;
+
+      const livePromise = fetchCompetitionSnapshot(sourceUrl)
+        .then(text => parseCompetitionSnapshot(text))
+        .catch(err => {
+          liveErr = err;
+          return null;
+        });
+
+      const feedPromise = fetchCompetitionFromFeed().catch(err => {
+        feedErr = err;
+        return null;
+      });
+
+      if (silent) {
+        [liveParsed, feedParsed] = await Promise.all([livePromise, feedPromise]);
+      } else {
+        liveParsed = await livePromise;
+        if (!liveParsed || liveParsed.standings.length < 6 || liveParsed.nextGames.length < 1) {
+          feedParsed = await feedPromise;
+        }
       }
+
+      const { payload, source } = pickFresherCompetitionPayload(liveParsed, feedParsed);
+      if (!payload || payload.standings.length < 6 || payload.nextGames.length < 1) {
+        throw liveErr || feedErr || new Error("Geen geldige competitiedata");
+      }
+
       setCompetitionData(prev => ({
         ...prev,
-        standings: nextData.standings?.length ? nextData.standings : prev.standings,
-        topTeams: nextData.topTeams?.length ? nextData.topTeams : prev.topTeams,
-        nextGames: nextData.nextGames?.length ? nextData.nextGames : prev.nextGames,
-        lastRoundLabel: nextData.lastRoundLabel || prev.lastRoundLabel,
-        lastRoundResults: nextData.lastRoundResults?.length ? nextData.lastRoundResults : prev.lastRoundResults,
-        updatedLabel: "Live ververst op " + refreshedAt,
+        ...buildCompetitionPatch(payload, refreshedAt, source),
       }));
-      if (!silent) notify("Competitiedata live ververst!");
+
+      if (!silent) {
+        if (source === "live") notify("Competitiedata ververst van Powerleague!");
+        else notify("Competitie geladen uit cache (live bron niet bereikbaar).");
+      }
     } catch (err) {
       console.error("Competition refresh error:", err);
-      if (!silent) notify("Verversen mislukt. Probeer het zo opnieuw.", true);
+      if (!silent) notify("Verversen mislukt. Check je internet en probeer opnieuw.", true);
     } finally {
       setCompetitionRefreshing(false);
     }

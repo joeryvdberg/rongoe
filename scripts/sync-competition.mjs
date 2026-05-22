@@ -1,30 +1,9 @@
 import { readFile, writeFile } from "node:fs/promises";
-import { parseCompetitionSnapshot } from "../src/competition-parse.js";
+import { parseCompetitionSnapshot, competitionRecencyScore } from "../src/competition-parse.js";
 
 const SOURCE_URL = "https://www.powerleague.com/nl/competitie?league_id=fd12d044-1e65-6cbb-ee14-812e80a0f3b6&division_id=fd12d044-1e65-6cbb-ee14-812e285bfab6";
 const OUT_PATH = new URL("../public/competition-live.json", import.meta.url);
 
-function parseNlDate(dateStr = "") {
-  const [dd, mm, yyyy] = dateStr.split("/").map(Number);
-  if (!dd || !mm || !yyyy) return null;
-  return new Date(yyyy, mm - 1, dd, 12, 0, 0, 0);
-}
-
-/** Ignore future fixture headers that were mistakenly used as round labels — they break staleness logic. */
-function effectiveLastRoundTs(label, nowMs) {
-  const dt = parseNlDate(label || "");
-  if (!dt?.getTime()) return 0;
-  if (dt.getTime() > nowMs) return 0;
-  return dt.getTime();
-}
-
-function recencyScore(data, nowMs) {
-  const lastRoundTs = effectiveLastRoundTs(data?.lastRoundLabel || "", nowMs);
-  const totalPlayed = Array.isArray(data?.standings)
-    ? data.standings.reduce((sum, row) => sum + (Number(row.played) || 0), 0)
-    : 0;
-  return { lastRoundTs, totalPlayed };
-}
 
 async function fetchSnapshot() {
   const candidates = [
@@ -70,8 +49,8 @@ const nowMs = Date.now();
 try {
   const existingRaw = await readFile(OUT_PATH, "utf-8");
   const existing = JSON.parse(existingRaw);
-  const current = recencyScore(existing, nowMs);
-  const incoming = recencyScore(parsed, nowMs);
+  const current = competitionRecencyScore(existing, nowMs);
+  const incoming = competitionRecencyScore(parsed, nowMs);
   const definitelyStaleCachedPage =
     current.lastRoundTs > 0 &&
     incoming.lastRoundTs > 0 &&

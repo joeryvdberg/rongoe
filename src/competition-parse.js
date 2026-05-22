@@ -251,3 +251,42 @@ export function parseCompetitionSnapshot(snapshot) {
     lastRoundResults,
   };
 }
+
+function parseNlDateOnly(dateStr = "") {
+  const [dd, mm, yyyy] = dateStr.split("/").map(Number);
+  if (!dd || !mm || !yyyy) return null;
+  return new Date(yyyy, mm - 1, dd, 12, 0, 0, 0);
+}
+
+/** Higher = newer competition snapshot (ignore future-only round labels). */
+export function competitionRecencyScore(data, nowMs = Date.now()) {
+  const dt = parseNlDateOnly(data?.lastRoundLabel || "");
+  let lastRoundTs = 0;
+  if (dt?.getTime() && dt.getTime() <= nowMs) lastRoundTs = dt.getTime();
+  const totalPlayed = Array.isArray(data?.standings)
+    ? data.standings.reduce((sum, row) => sum + (Number(row.played) || 0), 0)
+    : 0;
+  const resultCount = Array.isArray(data?.lastRoundResults) ? data.lastRoundResults.length : 0;
+  return { lastRoundTs, totalPlayed, resultCount };
+}
+
+export function isCompetitionDataFresher(incoming, current, nowMs = Date.now()) {
+  const inc = competitionRecencyScore(incoming, nowMs);
+  const cur = competitionRecencyScore(current, nowMs);
+  if (inc.lastRoundTs > cur.lastRoundTs) return true;
+  if (inc.lastRoundTs < cur.lastRoundTs && cur.lastRoundTs > 0) return false;
+  if (inc.totalPlayed > cur.totalPlayed) return true;
+  if (inc.totalPlayed < cur.totalPlayed && cur.totalPlayed > 0) return false;
+  if (inc.resultCount > cur.resultCount) return true;
+  return inc.totalPlayed >= cur.totalPlayed;
+}
+
+/** Prefer live scrape over static feed when scores tie or incoming is newer. */
+export function pickFresherCompetitionPayload(liveParsed, feedParsed, nowMs = Date.now()) {
+  if (liveParsed && !feedParsed) return { payload: liveParsed, source: "live" };
+  if (feedParsed && !liveParsed) return { payload: feedParsed, source: "feed" };
+  if (!liveParsed && !feedParsed) return { payload: null, source: null };
+  if (isCompetitionDataFresher(liveParsed, feedParsed, nowMs)) return { payload: liveParsed, source: "live" };
+  if (isCompetitionDataFresher(feedParsed, liveParsed, nowMs)) return { payload: feedParsed, source: "feed" };
+  return { payload: liveParsed, source: "live" };
+}
