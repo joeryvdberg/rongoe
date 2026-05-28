@@ -831,12 +831,15 @@ export default function App() {
 
         // Load match dates
         const { data: dData } = await db.from("match_dates").select("*").order("sort_order");
+        let loadedDates = [];
         if (dData && dData.length > 0) {
-          setMatchDates(dData.map(d => ({ date: d.date, match_count: d.match_count || 1 })));
+          loadedDates = dData.map(d => ({ date: d.date, match_count: d.match_count || 1 }));
+          setMatchDates(loadedDates);
         } else {
           // Seed default dates
           const rows = DEFAULT_DATES.map((d, i) => ({ date: d.date, match_count: d.match_count, sort_order: i }));
           await db.from("match_dates").insert(rows);
+          loadedDates = DEFAULT_DATES;
           setMatchDates(DEFAULT_DATES);
         }
 
@@ -847,7 +850,13 @@ export default function App() {
           aData.forEach(row => {
             if (!availObj[row.player_id]) availObj[row.player_id] = {};
             // Support both old (date_index) and new (date_string) formats
-            const key = row.date_string || (typeof row.date_index === 'number' ? String(row.date_index) : row.date_index);
+            let key = row.date_string;
+            if (!key && typeof row.date_index === 'number' && loadedDates[row.date_index]) {
+              key = loadedDates[row.date_index].date;
+            }
+            if (!key) {
+              key = String(row.date_index);
+            }
             availObj[row.player_id][key] = row.is_free;
           });
           setAvail(availObj);
@@ -942,7 +951,10 @@ export default function App() {
       ...prev,
       [pid]: { ...(prev[pid] || {}), [date]: newVal }
     }));
-    await db.from("availability").upsert({ player_id: pid, date_string: date, is_free: newVal });
+    const di = matchDates.findIndex(d => (typeof d === "string" ? d : d.date) === date);
+    if (di >= 0) {
+      await db.from("availability").upsert({ player_id: pid, date_index: di, is_free: newVal });
+    }
   }
 
   // ── GENERATE & SAVE SCHEDULE ─────────────────────────────────────────────────
@@ -1667,7 +1679,8 @@ function RosterView({ players, sched, avail, matchDates }) {
     <div>
       <Panel title="WIE SPEELT WANNEER?" color={G.green} icon="📋">
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {matchDates.map((date, i) => {
+          {matchDates.map((dateObj, i) => {
+            const date = typeof dateObj === "string" ? dateObj : dateObj.date;
             const entry = sched[date];
             if (!entry) return null;
             const isOpen = openDate === date;
@@ -1725,7 +1738,7 @@ function RosterView({ players, sched, avail, matchDates }) {
                         <div style={{ fontFamily:"Bangers, cursive", fontSize:15, letterSpacing:1, color:"#c7d5eb", marginBottom:7 }}>— SKIPT</div>
                         <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
                           {entry.skipped.map(p => {
-                            const had = avail[p.id]?.[i];
+                            const had = avail[p.id]?.[date];
                             return <Tag key={p.id} bg={had?G.brown:"#aaa"}>{p.name}{had?" ⭐":""}</Tag>;
                           })}
                         </div>
@@ -1743,7 +1756,8 @@ function RosterView({ players, sched, avail, matchDates }) {
       <Panel title="AANWEZIGHEID OVERZICHT" color={G.brown} icon="📊">
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
           {players.map(p => {
-            const pc = matchDates.filter(date => {
+            const pc = matchDates.filter(dateObj => {
+              const date = typeof dateObj === "string" ? dateObj : dateObj.date;
               const e = sched[date];
               return e && (e.keeper?.id===p.id || e.players?.some(fp => fp.id===p.id));
             }).length;
@@ -1976,7 +1990,8 @@ function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule
             <Card style={{ padding:30, textAlign:"center", color:"#888" }}>Nog geen rooster.</Card>
           ) : (
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-              {matchDates.map((date, i) => {
+              {matchDates.map((dateObj, i) => {
+                const date = typeof dateObj === "string" ? dateObj : dateObj.date;
                 const entry = sched[date];
                 if (!entry) return null;
                 return (
@@ -2001,7 +2016,7 @@ function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule
                     {entry.skipped?.length>0 && (
                       <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
                         {entry.skipped.map(p => {
-                          const had = avail[p.id]?.[i];
+                          const had = avail[p.id]?.[date];
                           return <Tag key={p.id} bg={had?G.brown:"#bbb"}>{p.name}{had?" ⭐":""}</Tag>;
                         })}
                       </div>
