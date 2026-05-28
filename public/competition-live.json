@@ -6,7 +6,7 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 28-5-2026, 21:23:09",
+  "updatedLabel": "Live sync op 28-5-2026, 22:52:09",
   "standings": [
     {
       "pos": 1,
@@ -34,6 +34,18 @@
     },
     {
       "pos": 3,
+      "club": "Glory Boyz FC",
+      "played": 3,
+      "won": 1,
+      "drawn": 1,
+      "lost": 1,
+      "gf": 18,
+      "ga": 17,
+      "gd": 1,
+      "points": 4
+    },
+    {
+      "pos": 4,
       "club": "Fiorentina Turner",
       "played": 2,
       "won": 1,
@@ -41,18 +53,6 @@
       "lost": 0,
       "gf": 14,
       "ga": 13,
-      "gd": 1,
-      "points": 4
-    },
-    {
-      "pos": 4,
-      "club": "De Meer",
-      "played": 3,
-      "won": 1,
-      "drawn": 1,
-      "lost": 1,
-      "gf": 13,
-      "ga": 12,
       "gd": 1,
       "points": 4
     },
@@ -70,6 +70,18 @@
     },
     {
       "pos": 6,
+      "club": "De Meer",
+      "played": 3,
+      "won": 1,
+      "drawn": 0,
+      "lost": 2,
+      "gf": 19,
+      "ga": 21,
+      "gd": -2,
+      "points": 3
+    },
+    {
+      "pos": 7,
       "club": "Los Fuegos",
       "played": 3,
       "won": 1,
@@ -79,18 +91,6 @@
       "ga": 19,
       "gd": -2,
       "points": 3
-    },
-    {
-      "pos": 7,
-      "club": "Glory Boyz FC",
-      "played": 3,
-      "won": 0,
-      "drawn": 2,
-      "lost": 1,
-      "gf": 9,
-      "ga": 11,
-      "gd": -2,
-      "points": 2
     },
     {
       "pos": 8,
@@ -122,8 +122,8 @@
     },
     {
       "pos": 3,
-      "club": "Fiorentina Turner",
-      "played": 2,
+      "club": "Glory Boyz FC",
+      "played": 3,
       "won": 1,
       "points": 4
     }
@@ -182,8 +182,8 @@
   "lastRoundResults": [
     {
       "home": "Glory Boyz FC",
-      "homeScore": 0,
-      "awayScore": 0,
+      "homeScore": 9,
+      "awayScore": 6,
       "away": "De Meer"
     },
     {
