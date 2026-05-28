@@ -1283,6 +1283,7 @@ export default function App() {
               saveMatchDates={saveMatchDates}
               addPlayer={addPlayer} removePlayer={removePlayer} savePlayerName={savePlayerName}
               playerStats={playerStats} updatePlayerStats={updatePlayerStats}
+              updatePlayerInjuryStatus={updatePlayerInjuryStatus}
               motmWeekLabel={motmWeekLabel}
               motmRoundVotesTotal={Object.values(motmVotesForRound).length}
               motmRoundLeaderboard={motmRoundLeaderboard}
@@ -1944,7 +1945,7 @@ function AdminLogin({ adminPwInput, setAdminPwInput, adminPwError, tryAdminLogin
 }
 
 // ── ADMIN VIEW ────────────────────────────────────────────────────────────────
-function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule, adminTab, setAdminTab, saveMatchDates, addPlayer, removePlayer, savePlayerName, playerStats, updatePlayerStats, motmWeekLabel, motmRoundVotesTotal, motmRoundLeaderboard, motmSeasonTop3 }) {
+function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule, adminTab, setAdminTab, saveMatchDates, addPlayer, removePlayer, savePlayerName, playerStats, updatePlayerStats, motmWeekLabel, motmRoundVotesTotal, motmRoundLeaderboard, motmSeasonTop3, updatePlayerInjuryStatus }) {
   return (
     <div>
       <div className="admin-tabs">
