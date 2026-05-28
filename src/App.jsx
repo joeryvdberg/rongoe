@@ -10,21 +10,32 @@ const PUBLIC_VOTER_ID = 9999;
 
 // ── DEFAULTS ──────────────────────────────────────────────────────────────────
 const DEFAULT_DATES = [
-  "2025-04-17","2025-04-24","2025-05-01","2025-05-08",
-  "2025-05-15","2025-05-22","2025-05-29","2025-06-05",
-  "2025-06-12","2025-06-19","2025-06-26","2025-07-03",
-  "2025-07-10","2025-07-17"
+  { date: "2025-04-17", match_count: 1 },
+  { date: "2025-04-24", match_count: 1 },
+  { date: "2025-05-01", match_count: 1 },
+  { date: "2025-05-08", match_count: 1 },
+  { date: "2025-05-15", match_count: 1 },
+  { date: "2025-05-22", match_count: 1 },
+  { date: "2025-05-29", match_count: 1 },
+  { date: "2025-06-05", match_count: 1 },
+  { date: "2025-06-12", match_count: 1 },
+  { date: "2025-06-19", match_count: 1 },
+  { date: "2025-06-26", match_count: 1 },
+  { date: "2025-07-03", match_count: 1 },
+  { date: "2025-07-10", match_count: 1 },
+  { date: "2025-07-17", match_count: 1 },
+  { date: "2026-05-28", match_count: 2 }
 ];
 
 const DEFAULT_PLAYERS = [
-  { id: 1, name: "Speler 1", role: "keeper", sort_order: 0 },
-  { id: 2, name: "Speler 2", role: "veld",   sort_order: 1 },
-  { id: 3, name: "Speler 3", role: "veld",   sort_order: 2 },
-  { id: 4, name: "Speler 4", role: "veld",   sort_order: 3 },
-  { id: 5, name: "Speler 5", role: "veld",   sort_order: 4 },
-  { id: 6, name: "Speler 6", role: "veld",   sort_order: 5 },
-  { id: 7, name: "Speler 7", role: "veld",   sort_order: 6 },
-  { id: 8, name: "Speler 8", role: "veld",   sort_order: 7 },
+  { id: 1, name: "Speler 1", role: "keeper", sort_order: 0, injury_status: "fit" },
+  { id: 2, name: "Speler 2", role: "veld",   sort_order: 1, injury_status: "fit" },
+  { id: 3, name: "Speler 3", role: "veld",   sort_order: 2, injury_status: "fit" },
+  { id: 4, name: "Speler 4", role: "veld",   sort_order: 3, injury_status: "fit" },
+  { id: 5, name: "Speler 5", role: "veld",   sort_order: 4, injury_status: "fit" },
+  { id: 6, name: "Speler 6", role: "veld",   sort_order: 5, injury_status: "fit" },
+  { id: 7, name: "Speler 7", role: "veld",   sort_order: 6, injury_status: "fit" },
+  { id: 8, name: "Speler 8", role: "veld",   sort_order: 7, injury_status: "fit" },
 ];
 
 const COMPETITION_INFO = {
@@ -144,17 +155,19 @@ function getMotmWeekLabel(roundKey) {
 
 // ── SCHEDULING ────────────────────────────────────────────────────────────────
 function buildSchedule(players, availability, matchDates) {
-  const field = players.filter(p => p.role === "veld");
-  const keeper = players.find(p => p.role === "keeper");
+  const allFitPlayers = players.filter(p => p.injury_status !== "injured");
+  const field = allFitPlayers.filter(p => p.role === "veld");
+  const keeper = allFitPlayers.find(p => p.role === "keeper");
   const MAX_FIELD = 7;
   const plays = {};
   field.forEach(p => { plays[p.id] = 0; });
   const sched = {};
 
-  matchDates.forEach((date, di) => {
+  matchDates.forEach((dateObj, di) => {
+    const date = typeof dateObj === "string" ? dateObj : dateObj.date;
     const toPlay = Math.min(MAX_FIELD, field.length);
     const toSkip = field.length - toPlay;
-    const wantFree = field.filter(p => availability[p.id]?.[di]);
+    const wantFree = field.filter(p => availability[p.id]?.[date]);
     const wantFreeIds = new Set(wantFree.map(p => p.id));
     let skipped = [];
 
@@ -174,7 +187,7 @@ function buildSchedule(players, availability, matchDates) {
     const playing = field.filter(p => !skippedIds.has(p.id));
     const forcedFreePlayers = playing.filter(p => wantFreeIds.has(p.id));
     playing.forEach(p => { plays[p.id]++; });
-    const keeperOut = keeper ? !!(availability[keeper.id]?.[di]) : false;
+    const keeperOut = keeper ? !!(availability[keeper.id]?.[date]) : false;
 
     sched[date] = {
       date, di,
@@ -190,12 +203,13 @@ function buildSchedule(players, availability, matchDates) {
 }
 
 /** Aantal spelers op het veld bij een volledige opstelling (zelfde logica als buildSchedule). */
-function idealRosterHeadcount(players, availability, di) {
-  const field = players.filter(p => p.role === "veld");
-  const keeper = players.find(p => p.role === "keeper");
+function idealRosterHeadcount(players, availability, date) {
+  const allFitPlayers = players.filter(p => p.injury_status !== "injured");
+  const field = allFitPlayers.filter(p => p.role === "veld");
+  const keeper = allFitPlayers.find(p => p.role === "keeper");
   const MAX_FIELD = 7;
   const fieldOnPitch = Math.min(MAX_FIELD, field.length);
-  const keeperOut = keeper ? !!(availability[keeper.id]?.[di]) : false;
+  const keeperOut = keeper ? !!(availability[keeper.id]?.[date]) : false;
   return (keeper && !keeperOut ? 1 : 0) + fieldOnPitch;
 }
 
@@ -215,7 +229,8 @@ function getNextRosterMatch(matchDates, sched) {
   if (!sched || !matchDates?.length) return null;
   const startToday = new Date();
   startToday.setHours(0, 0, 0, 0);
-  for (const date of matchDates) {
+  for (const dateObj of matchDates) {
+    const date = typeof dateObj === "string" ? dateObj : dateObj.date;
     const d = new Date(date + "T12:00:00");
     if (Number.isNaN(d.getTime()) || d < startToday) continue;
     const entry = sched[date];
@@ -225,6 +240,21 @@ function getNextRosterMatch(matchDates, sched) {
     return { date, entry };
   }
   return null;
+}
+
+/** Genereer matchDates uit PowerLeague competition data (nextGames). Groepeert meerdere matches per dag. */
+function generateMatchDatesFromCompetition(competitionData) {
+  if (!competitionData?.nextGames || competitionData.nextGames.length === 0) return [];
+  
+  const dateMap = {};
+  competitionData.nextGames.forEach(game => {
+    if (!game.date) return;
+    if (!dateMap[game.date]) dateMap[game.date] = { date: game.date, match_count: 0 };
+    dateMap[game.date].match_count++;
+  });
+  
+  const dates = Object.keys(dateMap).sort();
+  return dates.map(d => dateMap[d]);
 }
 
 // ── STYLES ────────────────────────────────────────────────────────────────────
@@ -802,10 +832,10 @@ export default function App() {
         // Load match dates
         const { data: dData } = await db.from("match_dates").select("*").order("sort_order");
         if (dData && dData.length > 0) {
-          setMatchDates(dData.map(d => d.date));
+          setMatchDates(dData.map(d => ({ date: d.date, match_count: d.match_count || 1 })));
         } else {
           // Seed default dates
-          const rows = DEFAULT_DATES.map((date, i) => ({ date, sort_order: i }));
+          const rows = DEFAULT_DATES.map((d, i) => ({ date: d.date, match_count: d.match_count, sort_order: i }));
           await db.from("match_dates").insert(rows);
           setMatchDates(DEFAULT_DATES);
         }
@@ -816,7 +846,9 @@ export default function App() {
           const availObj = {};
           aData.forEach(row => {
             if (!availObj[row.player_id]) availObj[row.player_id] = {};
-            availObj[row.player_id][row.date_index] = row.is_free;
+            // Support both old (date_index) and new (date_string) formats
+            const key = row.date_string || (typeof row.date_index === 'number' ? String(row.date_index) : row.date_index);
+            availObj[row.player_id][key] = row.is_free;
           });
           setAvail(availObj);
         }
@@ -904,13 +936,13 @@ export default function App() {
   }
 
   // ── TOGGLE AVAILABILITY ──────────────────────────────────────────────────────
-  async function toggleAvail(pid, di) {
-    const newVal = !avail[pid]?.[di];
+  async function toggleAvail(pid, date) {
+    const newVal = !avail[pid]?.[date];
     setAvail(prev => ({
       ...prev,
-      [pid]: { ...(prev[pid] || {}), [di]: newVal }
+      [pid]: { ...(prev[pid] || {}), [date]: newVal }
     }));
-    await db.from("availability").upsert({ player_id: pid, date_index: di, is_free: newVal });
+    await db.from("availability").upsert({ player_id: pid, date_string: date, is_free: newVal });
   }
 
   // ── GENERATE & SAVE SCHEDULE ─────────────────────────────────────────────────
@@ -930,6 +962,13 @@ export default function App() {
     setPlayers(prev => prev.map(p => p.id === id ? { ...p, name } : p));
     if (activePlayer?.id === id) setActivePlayer(prev => ({ ...prev, name }));
     await db.from("players").update({ name }).eq("id", id);
+  }
+
+  async function updatePlayerInjuryStatus(id, status) {
+    setPlayers(prev => prev.map(p => p.id === id ? { ...p, injury_status: status } : p));
+    if (activePlayer?.id === id) setActivePlayer(prev => ({ ...prev, injury_status: status }));
+    await db.from("players").update({ injury_status: status }).eq("id", id);
+    notify(status === "injured" ? "Speler als geblesseerd gemarkeerd" : "Speler is weer fit!", false);
   }
 
   async function updatePlayerStats(id, goals, assists) {
@@ -976,24 +1015,28 @@ export default function App() {
   async function saveMatchDates(dates) {
     setMatchDates(dates);
     await db.from("match_dates").delete().neq("date", "____");
-    const rows = dates.map((date, i) => ({ date, sort_order: i }));
+    const rows = dates.map((d, i) => ({
+      date: typeof d === "string" ? d : d.date,
+      match_count: typeof d === "string" ? 1 : (d.match_count || 1),
+      sort_order: i
+    }));
     await db.from("match_dates").insert(rows);
   }
 
   // ── SWAP LOGIC ───────────────────────────────────────────────────────────────
-  function startSwap(pid, di) { setSwapReq(pid ? { pid, di } : null); }
+  function startSwap(pid, date) { setSwapReq(pid ? { pid, date } : null); }
 
-  function sendSwap(toPid, di) {
+  function sendSwap(toPid, date) {
     if (!swapReq) return;
     if (toPid === swapReq.pid) { notify("Niet met jezelf!", true); return; }
-    setSwapOffers(prev => [...prev, { fromId: swapReq.pid, toId: toPid, di }]);
+    setSwapOffers(prev => [...prev, { fromId: swapReq.pid, toId: toPid, date }]);
     setSwapReq(null);
     notify("Ruilverzoek verstuurd!");
   }
 
   async function acceptSwap(offer) {
     if (!sched) return;
-    const date = matchDates[offer.di];
+    const date = offer.date;
     const fp = players.find(p => p.id === offer.fromId);
     const tp = players.find(p => p.id === offer.toId);
     if (!fp || !tp) return;
@@ -1051,10 +1094,11 @@ export default function App() {
 
   function mySchedule(pid) {
     if (!sched) return [];
-    return matchDates.map((date, i) => {
+    return matchDates.map((dateObj, i) => {
+      const date = typeof dateObj === "string" ? dateObj : dateObj.date;
       const e = sched[date];
       const playing = e && (e.keeper?.id === pid || e.players?.some(p => p.id === pid));
-      return { date, di: i, playing, entry: e };
+      return { date, i, playing, entry: e };
     });
   }
 
@@ -1065,8 +1109,7 @@ export default function App() {
     if (!nm) return null;
     const playerIds = rosterPlayerIdsFromEntry(nm.entry);
     if (!playerIds.length) return null;
-    const di = matchDates.indexOf(nm.date);
-    const ideal = di >= 0 ? idealRosterHeadcount(players, avail, di) : 0;
+    const ideal = idealRosterHeadcount(players, avail, nm.date);
     const entry = nm.entry;
     const actual = (entry.keeper ? 1 : 0) + (entry.players?.length || 0);
     const shortBy = Math.max(0, ideal - actual);
@@ -1988,10 +2031,11 @@ function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule
                   <tr key={p.id} style={{ borderTop:"1.5px solid "+G.line }}>
                     <td style={{ padding:"6px 10px", fontWeight:700, whiteSpace:"nowrap" }}>{p.role==="keeper"?"🧤":"⚽"} {p.name}</td>
                     {matchDates.map((d,i) => {
-                      const free = avail[p.id]?.[i];
+                      const date = typeof d === "string" ? d : d.date;
+                      const free = avail[p.id]?.[date];
                       return (
-                        <td key={d} style={{ textAlign:"center", padding:3 }}>
-                          <button onClick={() => toggleAvail(p.id, i)} style={{
+                        <td key={date} style={{ textAlign:"center", padding:3 }}>
+                          <button onClick={() => toggleAvail(p.id, date)} style={{
                             width:26, height:26, borderRadius:5, border:"2px solid "+G.ink,
                             background: free ? G.red : "rgba(63,218,139,0.25)",
                             color: free ? "white" : G.green,
@@ -2021,6 +2065,7 @@ function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule
           savePlayerName={savePlayerName}
           playerStats={playerStats}
           updatePlayerStats={updatePlayerStats}
+          updatePlayerInjuryStatus={updatePlayerInjuryStatus}
         />
       )}
 
@@ -2231,9 +2276,9 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
         ) : (
           <>
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-              {schedule.map(({ date, di, playing, entry }) => {
-                const isFree = avail[player.id]?.[di];
-                const isActive = swapReq?.pid===player.id && swapReq?.di===di;
+            {schedule.map(({ date, i, playing, entry }) => {
+                const isFree = avail[player.id]?.[date];
+                const isActive = swapReq?.pid===player.id && swapReq?.i===i;
                 const teammates = entry ? [entry.keeper,...(entry.players||[])].filter(p => p && p.id!==player.id) : [];
 
                 return (
@@ -2243,7 +2288,7 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
                       <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                         <div style={{ width:8, height:8, borderRadius:"50%", flexShrink:0, background:playing?G.green:"#6f7a90", border:"2px solid "+G.line }}/>
                         <div>
-                          <div style={{ fontFamily:"Bangers, cursive", fontSize:17, letterSpacing:1 }}>RONDE {di+1} — {fmtDate(date)}</div>
+                          <div style={{ fontFamily:"Bangers, cursive", fontSize:17, letterSpacing:1 }}>RONDE {i+1} — {fmtDate(date)}</div>
                           {playing && teammates.length>0 && (
                             <div style={{ fontSize:11, color:"#d7e3f7", marginTop:1 }}>Met: {teammates.map(p=>p.name).join(", ")}</div>
                           )}
@@ -2253,13 +2298,13 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
                         {playing ? (
                           <>
                             <Tag bg={G.green}>✓ SPEELT</Tag>
-                            {!swapReq && <Btn small bg={G.orange} onClick={() => startSwap(player.id, di)}>🔄 RUILEN</Btn>}
+                            {!swapReq && <Btn small bg={G.orange} onClick={() => startSwap(player.id, date)}>🔄 RUILEN</Btn>}
                             {isActive && <Tag bg={G.red}>↓ KIES SPELER</Tag>}
                           </>
                         ) : (
                           <Tag bg="#aaa">— SKIPT</Tag>
                         )}
-                        <button onClick={() => toggleAvail(player.id, di)} style={{
+                        <button onClick={() => toggleAvail(player.id, date)} style={{
                           fontFamily:"Bangers, cursive", fontSize:12, letterSpacing:0.5,
                           padding:"4px 10px", borderRadius:6,
                           border:"1.5px solid "+(isFree?G.red:G.line),
@@ -2278,11 +2323,11 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
             {swapReq && (
               <Card style={{ marginTop:14, padding:"14px 16px", background:G.paperSoft, borderColor:G.red, boxShadow:"0 10px 18px rgba(255,93,77,0.22)" }}>
                 <div style={{ fontFamily:"Bangers, cursive", fontSize:18, letterSpacing:1, color:G.red, marginBottom:10 }}>
-                  🔄 RONDE {swapReq.di+1} — KIES MET WIE:
+                  🔄 {fmtDate(swapReq.date)} — KIES MET WIE:
                 </div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
                   {players.filter(p => p.id!==player.id).map(p => (
-                    <Btn key={p.id} small bg={G.blue} onClick={() => sendSwap(p.id, swapReq.di)}>{p.name}</Btn>
+                    <Btn key={p.id} small bg={G.blue} onClick={() => sendSwap(p.id, swapReq.date)}>{p.name}</Btn>
                   ))}
                   <Btn small outline onClick={() => startSwap(null,null)}>ANNULEREN</Btn>
                 </div>
@@ -2299,11 +2344,12 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
           </p>
         </Card>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(108px, 1fr))", gap:8, background:"#253758", border:"1.5px solid #3a527f", borderRadius:12, padding:10 }}>
-          {matchDates.map((date, i) => {
-            const isFree = avail[player.id]?.[i];
+          {matchDates.map((dateObj, i) => {
+            const date = typeof dateObj === "string" ? dateObj : dateObj.date;
+            const isFree = avail[player.id]?.[date];
             const isPlaying = sched ? (sched[date]?.keeper?.id===player.id || sched[date]?.players?.some(p=>p.id===player.id)) : null;
             return (
-              <button key={date} onClick={() => toggleAvail(player.id, i)} style={{
+              <button key={date} onClick={() => toggleAvail(player.id, date)} style={{
                 padding:"10px 6px", borderRadius:10,
                 border:"3px solid "+(isFree?G.red:G.ink),
                 background:isFree?"#5f2f37":"#2d4168",
@@ -2375,7 +2421,7 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
 }
 
 // ── PLAYERS ADMIN ─────────────────────────────────────────────────────────────
-function PlayersAdmin({ players, addPlayer, removePlayer, savePlayerName, playerStats, updatePlayerStats }) {
+function PlayersAdmin({ players, addPlayer, removePlayer, savePlayerName, playerStats, updatePlayerStats, updatePlayerInjuryStatus }) {
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("veld");
   const [added, setAdded] = useState(null);
@@ -2475,6 +2521,9 @@ function PlayersAdmin({ players, addPlayer, removePlayer, savePlayerName, player
               ) : (
                 <>
                 <Btn small bg={G.orange} onClick={() => { setEditId(p.id); setEditName(p.name); }}>BEWERK</Btn>
+                <Btn small bg={p.injury_status === "injured" ? G.green : G.red} onClick={() => updatePlayerInjuryStatus(p.id, p.injury_status === "injured" ? "fit" : "injured")}>
+                  {p.injury_status === "injured" ? "✓ FIT" : "🤕 BLESS"}
+                </Btn>
                 <Btn small bg={G.red} onClick={() => removePlayer(p.id)}>VERWIJDER</Btn>
                 </>
               )}
