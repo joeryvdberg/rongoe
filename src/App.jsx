@@ -1959,7 +1959,7 @@ function AdminLogin({ adminPwInput, setAdminPwInput, adminPwError, tryAdminLogin
 }
 
 // ── ADMIN VIEW ────────────────────────────────────────────────────────────────
-function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule, adminTab, setAdminTab, saveMatchDates, addPlayer, removePlayer, savePlayerName, playerStats, updatePlayerStats, motmWeekLabel, motmRoundVotesTotal, motmRoundLeaderboard, motmSeasonTop3, updatePlayerInjuryStatus }) {
+function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule, adminTab, setAdminTab, saveMatchDates, addPlayer, removePlayer, savePlayerName, playerStats, updatePlayerStats, motmWeekLabel, motmRoundVotesTotal, motmRoundLeaderboard, motmSeasonTop3, updatePlayerInjuryStatus, competitionData, refreshCompetitionData, competitionRefreshing }) {
   return (
     <div>
       <div className="admin-tabs">
@@ -1967,14 +1967,14 @@ function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule
           (() => {
             const isLongTab = label.length > 10;
             return (
-          <button key={t} onClick={() => setAdminTab(t)} style={{
+          <button key={t} onClick={() => setAdminTab(t)} className={`nav-kapow ${isLongTab ? "long-tab" : ""}`} style={{
             fontFamily:"Bangers, cursive", fontSize:24, letterSpacing:1.2,
             padding:"8px 18px", borderRadius:8, border:"2.5px solid "+G.ink,
             background: adminTab===t ? G.gold : G.paperSoft,
             boxShadow: adminTab===t ? "0 8px 16px rgba(0,0,0,0.35)" : "0 6px 14px rgba(0,0,0,0.26)",
             cursor:"pointer",
             color: adminTab===t ? "#121722" : "#f2f5ff",
-          }} className={`nav-kapow ${isLongTab ? "long-tab" : ""}`}>{label}</button>
+          }}>{label}</button>
             );
           })()
         ))}
@@ -2070,7 +2070,9 @@ function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule
       )}
 
       {adminTab === "dates" && (
-        <DatesView matchDates={matchDates} saveMatchDates={saveMatchDates} genSchedule={genSchedule} />
+        <CompetitionProvider value={{ competitionData, refreshCompetitionData, competitionRefreshing }}>
+          <DatesView matchDates={matchDates} saveMatchDates={saveMatchDates} genSchedule={genSchedule} />
+        </CompetitionProvider>
       )}
 
       {adminTab === "players" && (
@@ -2126,6 +2128,7 @@ function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule
 
 // ── DATES VIEW ────────────────────────────────────────────────────────────────
 function DatesView({ matchDates, saveMatchDates, genSchedule }) {
+  const { competitionData, refreshCompetitionData, competitionRefreshing } = useCompetitionContext();
   const [dates, setDates] = useState([...matchDates]);
   const [saved, setSaved] = useState(false);
 
@@ -2143,12 +2146,30 @@ function DatesView({ matchDates, saveMatchDates, genSchedule }) {
     genSchedule();
   }
 
+  async function importFromCompetition() {
+    await refreshCompetitionData({ silent: false });
+    const competitionDates = generateMatchDatesFromCompetition(competitionData);
+    if (competitionDates.length > 0) {
+      const formattedDates = competitionDates.map(d => {
+        const [day, month, year] = d.date.split('/');
+        return { date: `${year}-${month}-${day}`, match_count: d.match_count };
+      });
+      setDates(formattedDates);
+      await saveMatchDates(formattedDates);
+      setSaved(true);
+      genSchedule();
+    }
+  }
+
   return (
     <Panel title="SPEELDATA BEHEREN" color={G.blue} icon="📆">
       <Card style={{ padding:"12px 14px", marginBottom:14, background:G.paperSoft, boxShadow:"none" }}>
         <p style={{ fontSize:13, lineHeight:1.7 }}>
-          Voer hier de speeldatums in. Na opslaan wordt het rooster automatisch herberekend.
+          Voer hier de speeldatums in, of importeer ze direct uit de Powerleague competitiegegevens. Na opslaan of importeren wordt het rooster automatisch herberekend.
         </p>
+        <Btn bg={G.orange} onClick={importFromCompetition} disabled={competitionRefreshing}>
+          {competitionRefreshing ? "⏳ VERVERSEN..." : "📅 IMPORT VANUIT COMPETITIE"}
+        </Btn>
       </Card>
       <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:16 }}>
         {dates.map((date, i) => (
@@ -2158,7 +2179,7 @@ function DatesView({ matchDates, saveMatchDates, genSchedule }) {
               background:G.blue, border:"2px solid "+G.ink,
               display:"flex", alignItems:"center", justifyContent:"center",
               fontFamily:"Bangers, cursive", fontSize:16, color:"white",
-            }}>{i+1}</div>
+            }}>{i + 1}</div>
             <input type="date" value={date} onChange={e => updateDate(i, e.target.value)}
               style={{
                 flex:1, border:"2.5px solid "+(date?G.ink:G.red), borderRadius:8,
@@ -2169,8 +2190,9 @@ function DatesView({ matchDates, saveMatchDates, genSchedule }) {
               {date ? new Date(date+"T00:00:00").toLocaleDateString("nl-NL",{weekday:"short"}) : ""}
             </span>
             <Btn small bg={G.red} onClick={() => removeDate(i)}>🗑</Btn>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </div>
       <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
         <Btn bg={G.green} onClick={addDate}>➕ DATUM TOEVOEGEN</Btn>
@@ -2179,6 +2201,20 @@ function DatesView({ matchDates, saveMatchDates, genSchedule }) {
       </div>
     </Panel>
   );
+}
+
+const CompetitionContext = React.createContext(null);
+
+function useCompetitionContext() {
+  const context = React.useContext(CompetitionContext);
+  if (!context) {
+    throw new Error("useCompetitionContext must be used within a CompetitionProvider");
+  }
+  return context;
+}
+
+function CompetitionProvider({ children, value }) {
+  return <CompetitionContext.Provider value={value}>{children}</CompetitionContext.Provider>;
 }
 
 // ── PLAYER VIEW ───────────────────────────────────────────────────────────────
