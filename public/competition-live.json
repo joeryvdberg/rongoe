@@ -6,7 +6,7 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 29-5-2026, 15:25:58",
+  "updatedLabel": "Live sync op 29-5-2026, 18:18:55",
   "standings": [
     {
       "pos": 1,
@@ -150,12 +150,6 @@
     {
       "date": "04/06/2026",
       "time": "21:00",
-      "home": "The Big 5",
-      "away": "The Mohicans"
-    },
-    {
-      "date": "04/06/2026",
-      "time": "21:00",
       "home": "Fiorentina Turner",
       "away": "De Hertenjagers Reunited"
     },
@@ -176,6 +170,12 @@
       "time": "20:00",
       "home": "De Hertenjagers Reunited",
       "away": "The Big 5"
+    },
+    {
+      "date": "11/06/2026",
+      "time": "21:00",
+      "home": "The Mohicans",
+      "away": "Le Coq Sportif"
     }
   ],
   "lastRoundLabel": "28/05/2026",
