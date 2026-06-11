@@ -6,7 +6,7 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 11-6-2026, 16:57:45",
+  "updatedLabel": "Live sync op 11-6-2026, 19:37:26",
   "standings": [
     {
       "pos": 1,
@@ -60,13 +60,13 @@
       "pos": 5,
       "club": "De Hertenjagers Reunited",
       "played": 5,
-      "won": 1,
-      "drawn": 1,
+      "won": 2,
+      "drawn": 0,
       "lost": 3,
-      "gf": 21,
-      "ga": 27,
-      "gd": -6,
-      "points": 4
+      "gf": 29,
+      "ga": 32,
+      "gd": -3,
+      "points": 6
     },
     {
       "pos": 6,
@@ -97,12 +97,12 @@
       "club": "The Big 5",
       "played": 4,
       "won": 0,
-      "drawn": 2,
-      "lost": 2,
-      "gf": 13,
-      "ga": 19,
-      "gd": -6,
-      "points": 2
+      "drawn": 1,
+      "lost": 3,
+      "gf": 18,
+      "ga": 27,
+      "gd": -9,
+      "points": 1
     }
   ],
   "topTeams": [
@@ -200,8 +200,8 @@
     },
     {
       "home": "De Hertenjagers Reunited",
-      "homeScore": 0,
-      "awayScore": 0,
+      "homeScore": 8,
+      "awayScore": 5,
       "away": "The Big 5"
     }
   ]
