@@ -6,58 +6,46 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 11-6-2026, 19:37:26",
+  "updatedLabel": "Live sync op 11-6-2026, 21:37:16",
   "standings": [
     {
       "pos": 1,
       "club": "Le Coq Sportif",
       "played": 5,
-      "won": 3,
-      "drawn": 2,
+      "won": 5,
+      "drawn": 0,
       "lost": 0,
-      "gf": 24,
-      "ga": 14,
-      "gd": 10,
-      "points": 11
+      "gf": 44,
+      "ga": 23,
+      "gd": 21,
+      "points": 15
     },
     {
       "pos": 2,
-      "club": "Fiorentina Turner",
+      "club": "Glory Boyz FC",
       "played": 5,
       "won": 3,
-      "drawn": 2,
-      "lost": 0,
-      "gf": 29,
-      "ga": 24,
-      "gd": 5,
-      "points": 11
+      "drawn": 1,
+      "lost": 1,
+      "gf": 35,
+      "ga": 25,
+      "gd": 10,
+      "points": 10
     },
     {
       "pos": 3,
-      "club": "Glory Boyz FC",
+      "club": "Fiorentina Turner",
       "played": 5,
-      "won": 2,
-      "drawn": 2,
+      "won": 3,
+      "drawn": 1,
       "lost": 1,
-      "gf": 27,
-      "ga": 21,
-      "gd": 6,
-      "points": 8
+      "gf": 32,
+      "ga": 31,
+      "gd": 1,
+      "points": 10
     },
     {
       "pos": 4,
-      "club": "The Mohicans",
-      "played": 4,
-      "won": 2,
-      "drawn": 1,
-      "lost": 1,
-      "gf": 21,
-      "ga": 19,
-      "gd": 2,
-      "points": 7
-    },
-    {
-      "pos": 5,
       "club": "De Hertenjagers Reunited",
       "played": 5,
       "won": 2,
@@ -66,6 +54,18 @@
       "gf": 29,
       "ga": 32,
       "gd": -3,
+      "points": 6
+    },
+    {
+      "pos": 5,
+      "club": "The Mohicans",
+      "played": 4,
+      "won": 2,
+      "drawn": 0,
+      "lost": 2,
+      "gf": 27,
+      "ga": 32,
+      "gd": -5,
       "points": 6
     },
     {
@@ -97,12 +97,12 @@
       "club": "The Big 5",
       "played": 4,
       "won": 0,
-      "drawn": 1,
-      "lost": 3,
-      "gf": 18,
-      "ga": 27,
-      "gd": -9,
-      "points": 1
+      "drawn": 0,
+      "lost": 4,
+      "gf": 22,
+      "ga": 35,
+      "gd": -13,
+      "points": 0
     }
   ],
   "topTeams": [
@@ -110,22 +110,22 @@
       "pos": 1,
       "club": "Le Coq Sportif",
       "played": 5,
-      "won": 3,
-      "points": 11
+      "won": 5,
+      "points": 15
     },
     {
       "pos": 2,
-      "club": "Fiorentina Turner",
+      "club": "Glory Boyz FC",
       "played": 5,
       "won": 3,
-      "points": 11
+      "points": 10
     },
     {
       "pos": 3,
-      "club": "Glory Boyz FC",
+      "club": "Fiorentina Turner",
       "played": 5,
-      "won": 2,
-      "points": 8
+      "won": 3,
+      "points": 10
     }
   ],
   "nextGames": [
@@ -182,20 +182,20 @@
   "lastRoundResults": [
     {
       "home": "The Mohicans",
-      "homeScore": 0,
-      "awayScore": 0,
+      "homeScore": 6,
+      "awayScore": 13,
       "away": "Le Coq Sportif"
     },
     {
       "home": "Fiorentina Turner",
-      "homeScore": 0,
-      "awayScore": 0,
+      "homeScore": 3,
+      "awayScore": 7,
       "away": "Le Coq Sportif"
     },
     {
       "home": "The Big 5",
-      "homeScore": 0,
-      "awayScore": 0,
+      "homeScore": 4,
+      "awayScore": 8,
       "away": "Glory Boyz FC"
     },
     {
