@@ -6,102 +6,102 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 2-7-2026, 20:17:04",
+  "updatedLabel": "Live sync op 2-7-2026, 21:36:18",
   "standings": [
     {
       "pos": 1,
       "club": "Le Coq Sportif",
-      "played": 7,
+      "played": 8,
       "won": 7,
       "drawn": 0,
-      "lost": 0,
-      "gf": 63,
-      "ga": 28,
-      "gd": 35,
+      "lost": 1,
+      "gf": 66,
+      "ga": 40,
+      "gd": 26,
       "points": 21
     },
     {
       "pos": 2,
       "club": "Glory Boyz FC",
-      "played": 7,
-      "won": 4,
+      "played": 8,
+      "won": 5,
       "drawn": 1,
       "lost": 2,
-      "gf": 48,
-      "ga": 41,
-      "gd": 7,
-      "points": 13
+      "gf": 55,
+      "ga": 45,
+      "gd": 10,
+      "points": 16
     },
     {
       "pos": 3,
       "club": "Fiorentina Turner",
-      "played": 7,
-      "won": 3,
+      "played": 8,
+      "won": 4,
       "drawn": 1,
       "lost": 3,
-      "gf": 44,
-      "ga": 52,
-      "gd": -8,
-      "points": 10
+      "gf": 51,
+      "ga": 58,
+      "gd": -7,
+      "points": 13
     },
     {
       "pos": 4,
-      "club": "Los Fuegos",
-      "played": 6,
-      "won": 3,
+      "club": "De Meer",
+      "played": 7,
+      "won": 4,
       "drawn": 0,
       "lost": 3,
-      "gf": 38,
-      "ga": 39,
-      "gd": -1,
-      "points": 9
+      "gf": 51,
+      "ga": 40,
+      "gd": 11,
+      "points": 12
     },
     {
       "pos": 5,
-      "club": "De Meer",
-      "played": 5,
-      "won": 2,
+      "club": "De Hertenjagers Reunited",
+      "played": 8,
+      "won": 3,
       "drawn": 0,
-      "lost": 3,
-      "gf": 32,
-      "ga": 32,
-      "gd": 0,
-      "points": 6
+      "lost": 5,
+      "gf": 48,
+      "ga": 51,
+      "gd": -3,
+      "points": 9
     },
     {
       "pos": 6,
-      "club": "De Hertenjagers Reunited",
-      "played": 6,
-      "won": 2,
+      "club": "Los Fuegos",
+      "played": 7,
+      "won": 3,
       "drawn": 0,
       "lost": 4,
-      "gf": 36,
-      "ga": 40,
+      "gf": 42,
+      "ga": 46,
       "gd": -4,
-      "points": 6
+      "points": 9
     },
     {
       "pos": 7,
       "club": "The Mohicans",
-      "played": 6,
+      "played": 7,
       "won": 2,
       "drawn": 0,
-      "lost": 4,
-      "gf": 36,
-      "ga": 46,
-      "gd": -10,
+      "lost": 5,
+      "gf": 42,
+      "ga": 53,
+      "gd": -11,
       "points": 6
     },
     {
       "pos": 8,
       "club": "The Big 5",
-      "played": 6,
+      "played": 7,
       "won": 1,
       "drawn": 0,
-      "lost": 5,
-      "gf": 31,
-      "ga": 50,
-      "gd": -19,
+      "lost": 6,
+      "gf": 35,
+      "ga": 57,
+      "gd": -22,
       "points": 3
     }
   ],
@@ -109,56 +109,26 @@
     {
       "pos": 1,
       "club": "Le Coq Sportif",
-      "played": 7,
+      "played": 8,
       "won": 7,
       "points": 21
     },
     {
       "pos": 2,
       "club": "Glory Boyz FC",
-      "played": 7,
-      "won": 4,
-      "points": 13
+      "played": 8,
+      "won": 5,
+      "points": 16
     },
     {
       "pos": 3,
       "club": "Fiorentina Turner",
-      "played": 7,
-      "won": 3,
-      "points": 10
+      "played": 8,
+      "won": 4,
+      "points": 13
     }
   ],
   "nextGames": [
-    {
-      "date": "02/07/2026",
-      "time": "19:00",
-      "home": "The Mohicans",
-      "away": "Fiorentina Turner"
-    },
-    {
-      "date": "02/07/2026",
-      "time": "19:00",
-      "home": "Glory Boyz FC",
-      "away": "The Big 5"
-    },
-    {
-      "date": "02/07/2026",
-      "time": "20:00",
-      "home": "De Hertenjagers Reunited",
-      "away": "Los Fuegos"
-    },
-    {
-      "date": "02/07/2026",
-      "time": "20:00",
-      "home": "De Meer",
-      "away": "Le Coq Sportif"
-    },
-    {
-      "date": "02/07/2026",
-      "time": "21:00",
-      "home": "De Meer",
-      "away": "De Hertenjagers Reunited"
-    },
     {
       "date": "09/07/2026",
       "time": "18:00",
@@ -176,27 +146,63 @@
       "time": "20:00",
       "home": "Los Fuegos",
       "away": "Le Coq Sportif"
-    }
-  ],
-  "lastRoundLabel": "25/06/2026",
-  "lastRoundResults": [
-    {
-      "home": "Fiorentina Turner",
-      "homeScore": 5,
-      "awayScore": 9,
-      "away": "The Big 5"
     },
     {
-      "home": "Los Fuegos",
-      "homeScore": 5,
-      "awayScore": 4,
+      "date": "09/07/2026",
+      "time": "21:00",
+      "home": "Fiorentina Turner",
+      "away": "Glory Boyz FC"
+    },
+    {
+      "date": "16/07/2026",
+      "time": "19:00",
+      "home": "Le Coq Sportif",
       "away": "The Mohicans"
     },
     {
-      "home": "Le Coq Sportif",
-      "homeScore": 9,
-      "awayScore": 5,
+      "date": "16/07/2026",
+      "time": "20:00",
+      "home": "De Meer",
       "away": "Glory Boyz FC"
+    },
+    {
+      "date": "16/07/2026",
+      "time": "21:00",
+      "home": "De Hertenjagers Reunited",
+      "away": "Fiorentina Turner"
+    },
+    {
+      "date": "16/07/2026",
+      "time": "21:00",
+      "home": "Los Fuegos",
+      "away": "The Big 5"
+    }
+  ],
+  "lastRoundLabel": "02/07/2026",
+  "lastRoundResults": [
+    {
+      "home": "De Hertenjagers Reunited",
+      "homeScore": 7,
+      "awayScore": 4,
+      "away": "Los Fuegos"
+    },
+    {
+      "home": "De Meer",
+      "homeScore": 12,
+      "awayScore": 3,
+      "away": "Le Coq Sportif"
+    },
+    {
+      "home": "The Mohicans",
+      "homeScore": 6,
+      "awayScore": 7,
+      "away": "Fiorentina Turner"
+    },
+    {
+      "home": "De Meer",
+      "homeScore": 7,
+      "awayScore": 5,
+      "away": "De Hertenjagers Reunited"
     }
   ]
 }
