@@ -6,19 +6,19 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 3-7-2026, 08:29:35",
+  "updatedLabel": "Live sync op 3-7-2026, 11:12:27",
   "standings": [
     {
       "pos": 1,
       "club": "Le Coq Sportif",
       "played": 8,
-      "won": 7,
+      "won": 8,
       "drawn": 0,
-      "lost": 1,
-      "gf": 66,
-      "ga": 40,
-      "gd": 26,
-      "points": 21
+      "lost": 0,
+      "gf": 75,
+      "ga": 34,
+      "gd": 41,
+      "points": 24
     },
     {
       "pos": 2,
@@ -46,18 +46,6 @@
     },
     {
       "pos": 4,
-      "club": "De Meer",
-      "played": 7,
-      "won": 4,
-      "drawn": 0,
-      "lost": 3,
-      "gf": 51,
-      "ga": 40,
-      "gd": 11,
-      "points": 12
-    },
-    {
-      "pos": 5,
       "club": "De Hertenjagers Reunited",
       "played": 8,
       "won": 3,
@@ -66,6 +54,18 @@
       "gf": 48,
       "ga": 51,
       "gd": -3,
+      "points": 9
+    },
+    {
+      "pos": 5,
+      "club": "De Meer",
+      "played": 7,
+      "won": 3,
+      "drawn": 0,
+      "lost": 4,
+      "gf": 45,
+      "ga": 49,
+      "gd": -4,
       "points": 9
     },
     {
@@ -110,8 +110,8 @@
       "pos": 1,
       "club": "Le Coq Sportif",
       "played": 8,
-      "won": 7,
-      "points": 21
+      "won": 8,
+      "points": 24
     },
     {
       "pos": 2,
@@ -188,8 +188,8 @@
     },
     {
       "home": "De Meer",
-      "homeScore": 12,
-      "awayScore": 3,
+      "homeScore": 6,
+      "awayScore": 12,
       "away": "Le Coq Sportif"
     },
     {
