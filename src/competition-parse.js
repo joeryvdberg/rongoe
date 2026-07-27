@@ -104,7 +104,7 @@ export function parseCompetitionSnapshot(snapshot) {
     fixtureVsLines = lines.filter(line => /\[[^\]]+\]\([^)]+\)\s*vs\s*\[[^\]]+\]\([^)]+\)\d{2}:\d{2}$/.test(line));
     fixtureTimes = fixtureVsLines.map(() => "");
   }
-  const nextGamesRaw = fixtureVsLines.slice(0, 12).map((line, i) => {
+  const nextGamesRaw = fixtureVsLines.slice(0, 80).map((line, i) => {
     const compact = stripActionNoise(line);
     const pair = extractTeamPairFromLine(compact, knownTeams);
     if (!pair) return null;
@@ -159,7 +159,7 @@ export function parseCompetitionSnapshot(snapshot) {
       const tb = parseNlDateTime(b.date, b.time)?.getTime() || 0;
       return ta - tb;
     })
-    .slice(0, 8);
+    .slice(0, 80);
 
   // Markdown results: **[date]** then `[Home](url)3 5[Away](url)` (scores touch both links)
   const mdResultRows = [];

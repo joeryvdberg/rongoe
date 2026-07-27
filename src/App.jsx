@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { parseCompetitionSnapshot, parseNlDateTime, pickFresherCompetitionPayload } from "./competition-parse.js";
 
@@ -78,7 +78,7 @@ const COMPETITION_INFO = {
   ],
 };
 const COMPETITION_FEED_PATH = `${import.meta.env.BASE_URL}competition-live.json`;
-const COMPETITION_AUTO_REFRESH_MS = 5 * 60 * 1000;
+const COMPETITION_AUTO_REFRESH_MS = 60 * 60 * 1000;
 
 async function fetchCompetitionSnapshot(sourceUrl) {
   const proxyUrl = "https://r.jina.ai/http://" + sourceUrl.replace(/^https?:\/\//, "");
@@ -154,7 +154,7 @@ function getMotmWeekLabel(roundKey) {
 }
 
 // ── SCHEDULING ────────────────────────────────────────────────────────────────
-function buildSchedule(players, availability, matchDates) {
+function buildSchedule(players, availability, matchDates, cancelledDates = new Set()) {
   const allFitPlayers = players.filter(p => p.injury_status !== "injured");
   const field = allFitPlayers.filter(p => p.role === "veld");
   const keeper = allFitPlayers.find(p => p.role === "keeper");
@@ -165,6 +165,24 @@ function buildSchedule(players, availability, matchDates) {
 
   matchDates.forEach((dateObj, di) => {
     const date = typeof dateObj === "string" ? dateObj : dateObj.date;
+    const matchCount = typeof dateObj === "string" ? 1 : Math.max(1, Number(dateObj.match_count) || 1);
+    if (cancelledDates.has(date)) {
+      sched[date] = {
+        date,
+        di,
+        matchCount,
+        cancelled: true,
+        keeper: null,
+        players: [],
+        skipped: [],
+        requestedFreeIds: [],
+        wantFreeCount: 0,
+        forcedFreePlayerIds: [],
+        honored: 0,
+        missed: 0,
+      };
+      return;
+    }
     const toPlay = Math.min(MAX_FIELD, field.length);
     const toSkip = field.length - toPlay;
     const wantFree = field.filter(p => availability[p.id]?.[date]);
@@ -186,13 +204,14 @@ function buildSchedule(players, availability, matchDates) {
     const skippedIds = new Set(skipped.map(p => p.id));
     const playing = field.filter(p => !skippedIds.has(p.id));
     const forcedFreePlayers = playing.filter(p => wantFreeIds.has(p.id));
-    playing.forEach(p => { plays[p.id]++; });
+    playing.forEach(p => { plays[p.id] += matchCount; });
     const keeperOut = keeper ? !!(availability[keeper.id]?.[date]) : false;
 
     sched[date] = {
-      date, di,
+      date, di, matchCount,
       keeper: keeper && !keeperOut ? keeper : null,
       players: playing, skipped,
+      requestedFreeIds: wantFree.map(p => String(p.id)).sort(),
       wantFreeCount: wantFree.length,
       forcedFreePlayerIds: forcedFreePlayers.map(p => p.id),
       honored: skipped.filter(p => wantFree.some(w => w.id === p.id)).length,
@@ -243,14 +262,18 @@ function getNextRosterMatch(matchDates, sched) {
 }
 
 /** Genereer matchDates uit PowerLeague competition data (nextGames). Groepeert meerdere matches per dag. */
-function generateMatchDatesFromCompetition(competitionData) {
+function generateMatchDatesFromCompetition(competitionData, teamName = "Glory Boyz FC") {
   if (!competitionData?.nextGames || competitionData.nextGames.length === 0) return [];
   
   const dateMap = {};
   competitionData.nextGames.forEach(game => {
     if (!game.date) return;
-    if (!dateMap[game.date]) dateMap[game.date] = { date: game.date, match_count: 0 };
-    dateMap[game.date].match_count++;
+    if (game.home !== teamName && game.away !== teamName) return;
+    const [day, month, year] = game.date.split("/");
+    if (!day || !month || !year) return;
+    const isoDate = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    if (!dateMap[isoDate]) dateMap[isoDate] = { date: isoDate, match_count: 0 };
+    dateMap[isoDate].match_count++;
   });
   
   const dates = Object.keys(dateMap).sort();
@@ -621,8 +644,6 @@ export default function App() {
   const [avail, setAvail] = useState({});
   const [sched, setSched] = useState(null);
   const [activePlayer, setActivePlayer] = useState(null);
-  const [swapReq, setSwapReq] = useState(null);
-  const [swapOffers, setSwapOffers] = useState([]);
   const [editId, setEditId] = useState(null);
   const [editName, setEditName] = useState("");
   const [toast, setToast] = useState(null);
@@ -638,6 +659,7 @@ export default function App() {
   const [motmVotes, setMotmVotes] = useState({});
   /** match_date -> { [playerId string]: true } */
   const [matchPresence, setMatchPresence] = useState({});
+  const [datesNeedSchedule, setDatesNeedSchedule] = useState(false);
 
   function showFloat(text, color) {
     setFloatText({ text, color });
@@ -729,9 +751,50 @@ export default function App() {
     const timer = setInterval(() => {
       refreshCompetitionData({ silent: true });
     }, COMPETITION_AUTO_REFRESH_MS);
-    return () => clearInterval(timer);
+    function refreshWhenActive() {
+      if (document.visibilityState === "visible") {
+        refreshCompetitionData({ silent: true });
+      }
+    }
+    document.addEventListener("visibilitychange", refreshWhenActive);
+    window.addEventListener("focus", refreshWhenActive);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshWhenActive);
+      window.removeEventListener("focus", refreshWhenActive);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (loading) return;
+    const scrapedDates = generateMatchDatesFromCompetition(competitionData);
+    if (!scrapedDates.length) return;
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const historicalDates = matchDates.filter(dateObj => {
+      const date = typeof dateObj === "string" ? dateObj : dateObj.date;
+      return date < todayKey;
+    });
+    const futureScrapedDates = scrapedDates.filter(dateObj => dateObj.date >= todayKey);
+    if (!futureScrapedDates.length) return;
+    const merged = [...historicalDates, ...futureScrapedDates]
+      .filter((item, index, all) => {
+        const date = typeof item === "string" ? item : item.date;
+        return all.findIndex(candidate => (typeof candidate === "string" ? candidate : candidate.date) === date) === index;
+      })
+      .sort((a, b) => (typeof a === "string" ? a : a.date).localeCompare(typeof b === "string" ? b : b.date));
+    const signature = item => {
+      const date = typeof item === "string" ? item : item.date;
+      const count = typeof item === "string" ? 1 : (item.match_count || 1);
+      return `${date}:${count}`;
+    };
+    const currentSignature = matchDates.map(signature).join(",");
+    const mergedSignature = merged.map(signature).join(",");
+    if (currentSignature !== mergedSignature) {
+      saveMatchDates(merged).then(() => notify("Nieuwe Powerleague-speeldata automatisch gesynchroniseerd."));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, competitionData.updatedLabel]);
 
   async function castMotmVote(voterId, targetId) {
     if (!voterId || !targetId || voterId === targetId) return;
@@ -955,12 +1018,23 @@ export default function App() {
     if (di >= 0) {
       await db.from("availability").upsert({ player_id: pid, date_index: di, is_free: newVal });
     }
+    if (sched?.[date] && !sched[date].cancelled) {
+      const changedEntry = { ...sched[date], needsRegeneration: true, changedAt: new Date().toISOString() };
+      setSched(prev => ({ ...prev, [date]: changedEntry }));
+      await db.from("schedule").upsert({ date, data: changedEntry });
+    }
+    notify("Voorkeur aangepast. De admin ziet dat het rooster vernieuwd moet worden.");
   }
 
   // ── GENERATE & SAVE SCHEDULE ─────────────────────────────────────────────────
-  async function genSchedule() {
-    const newSched = buildSchedule(players, avail, matchDates);
+  async function genSchedule(datesOverride) {
+    const datesForSchedule = Array.isArray(datesOverride) ? datesOverride : matchDates;
+    const cancelledDates = new Set(
+      Object.entries(sched || {}).filter(([, entry]) => entry?.cancelled).map(([date]) => date)
+    );
+    const newSched = buildSchedule(players, avail, datesForSchedule, cancelledDates);
     setSched(newSched);
+    setDatesNeedSchedule(false);
     const rows = Object.entries(newSched).map(([date, data]) => ({ date, data }));
     await db.from("schedule").delete().neq("date", "____");
     await db.from("schedule").insert(rows);
@@ -1026,6 +1100,7 @@ export default function App() {
   // ── SAVE MATCH DATES ─────────────────────────────────────────────────────────
   async function saveMatchDates(dates) {
     setMatchDates(dates);
+    setDatesNeedSchedule(true);
     await db.from("match_dates").delete().neq("date", "____");
     const rows = dates.map((d, i) => ({
       date: typeof d === "string" ? d : d.date,
@@ -1035,73 +1110,34 @@ export default function App() {
     await db.from("match_dates").insert(rows);
   }
 
-  // ── SWAP LOGIC ───────────────────────────────────────────────────────────────
-  function startSwap(pid, date) { setSwapReq(pid ? { pid, date } : null); }
-
-  function sendSwap(toPid, date) {
-    if (!swapReq) return;
-    if (toPid === swapReq.pid) { notify("Niet met jezelf!", true); return; }
-    setSwapOffers(prev => [...prev, { fromId: swapReq.pid, toId: toPid, date }]);
-    setSwapReq(null);
-    notify("Ruilverzoek verstuurd!");
-  }
-
-  async function acceptSwap(offer) {
-    if (!sched) return;
-    const date = offer.date;
-    const fp = players.find(p => p.id === offer.fromId);
-    const tp = players.find(p => p.id === offer.toId);
-    if (!fp || !tp) return;
-
-    const newSched = { ...sched };
-    const e = { ...newSched[date], players: [...newSched[date].players], skipped: [...(newSched[date].skipped || [])] };
-    if (e.players.some(p => p.id === fp.id)) {
-      e.players = e.players.map(p => p.id === fp.id ? tp : p);
-      e.skipped = e.skipped.map(p => p.id === tp.id ? fp : p);
-      if (!e.skipped.some(p => p.id === fp.id)) e.skipped.push(fp);
-    } else {
-      e.players = e.players.map(p => p.id === tp.id ? fp : p);
-      e.skipped = e.skipped.map(p => p.id === fp.id ? tp : p);
-    }
-    newSched[date] = e;
-    setSched(newSched);
-    setSwapOffers(prev => prev.filter(o => o !== offer));
-    showFloat("POW!", G.orange);
-    showComicBurst(["SWAP", "ZAP"]);
-    notify(fp.name + " en " + tp.name + " geruild!");
-
-    // Save updated schedule entry
-    await db.from("schedule").upsert({ date, data: e });
-  }
-
-  function declineSwap(offer) {
-    setSwapOffers(prev => prev.filter(o => o !== offer));
-    notify("Ruilverzoek afgewezen.", true);
-  }
-
-  async function confirmMatchPresence(matchDate, playerId) {
+  async function toggleMatchPresence(matchDate, playerId) {
     const pidStr = String(playerId);
+    const wasPresent = !!matchPresence[matchDate]?.[pidStr];
     setMatchPresence(prev => ({
       ...prev,
-      [matchDate]: { ...(prev[matchDate] || {}), [pidStr]: true },
+      [matchDate]: { ...(prev[matchDate] || {}), [pidStr]: !wasPresent },
     }));
-    const { error } = await db.from("match_presence").upsert(
-      { match_date: matchDate, player_id: playerId },
-      { onConflict: "match_date,player_id" }
-    );
+    const query = wasPresent
+      ? db.from("match_presence").delete().eq("match_date", matchDate).eq("player_id", playerId)
+      : db.from("match_presence").upsert(
+        { match_date: matchDate, player_id: playerId },
+        { onConflict: "match_date,player_id" }
+      );
+    const { error } = await query;
     if (error) {
       console.error("match_presence upsert:", error);
       notify("Kon bevestiging niet opslaan. Controleer of de tabel match_presence bestaat in Supabase.", true);
       setMatchPresence(prev => {
         const n = { ...prev };
         const inner = { ...(n[matchDate] || {}) };
-        delete inner[pidStr];
+        if (wasPresent) inner[pidStr] = true;
+        else delete inner[pidStr];
         n[matchDate] = inner;
         return n;
       });
       return;
     }
-    showFloat("CHECK!", G.green);
+    showFloat(wasPresent ? "AANGEPAST!" : "CHECK!", wasPresent ? G.orange : G.green);
   }
 
   function mySchedule(pid) {
@@ -1110,11 +1146,10 @@ export default function App() {
       const date = typeof dateObj === "string" ? dateObj : dateObj.date;
       const e = sched[date];
       const playing = e && (e.keeper?.id === pid || e.players?.some(p => p.id === pid));
-      return { date, i, playing, entry: e };
+      const matchCount = typeof dateObj === "string" ? 1 : Math.max(1, Number(dateObj.match_count) || 1);
+      return { date, i, playing, cancelled: !!e?.cancelled, matchCount, entry: e };
     });
   }
-
-  const myOffers = activePlayer ? swapOffers.filter(o => o.toId === activePlayer.id) : [];
 
   const nextRosterInfo = useMemo(() => {
     const nm = getNextRosterMatch(matchDates, sched);
@@ -1123,13 +1158,57 @@ export default function App() {
     if (!playerIds.length) return null;
     const ideal = idealRosterHeadcount(players, avail, nm.date);
     const entry = nm.entry;
+    const matchDateEntry = matchDates.find(item => (typeof item === "string" ? item : item.date) === nm.date);
+    const matchCount = typeof matchDateEntry === "string" ? 1 : (matchDateEntry?.match_count || 1);
     const actual = (entry.keeper ? 1 : 0) + (entry.players?.length || 0);
     const shortBy = Math.max(0, ideal - actual);
-    return { date: nm.date, playerIds, shortBy, ideal, actual };
+    return { date: nm.date, playerIds, shortBy, ideal, actual, matchCount };
   }, [matchDates, sched, players, avail]);
+
+  const availabilityChanges = useMemo(() => {
+    if (!sched) return [];
+    return matchDates.filter(dateObj => {
+      const date = typeof dateObj === "string" ? dateObj : dateObj.date;
+      const entry = sched[date];
+      if (!entry || entry.cancelled) return false;
+      if (entry.needsRegeneration) return true;
+      if (!Array.isArray(entry.requestedFreeIds)) return false;
+      const current = players
+        .filter(player => !!avail[player.id]?.[date])
+        .map(player => String(player.id))
+        .sort();
+      return current.join(",") !== entry.requestedFreeIds.join(",");
+    }).map(dateObj => typeof dateObj === "string" ? dateObj : dateObj.date);
+  }, [sched, matchDates, players, avail]);
+  const scheduleDatesMismatch = !!sched && matchDates.some(dateObj => {
+    const date = typeof dateObj === "string" ? dateObj : dateObj.date;
+    return !sched[date];
+  });
+  const rosterNeedsRegeneration = datesNeedSchedule || scheduleDatesMismatch || availabilityChanges.length > 0;
+
+  async function toggleCancelledMatch(date) {
+    const alreadyCancelled = !!sched?.[date]?.cancelled;
+    const existingCancelledDate = Object.entries(sched || {}).find(([d, entry]) => d !== date && entry?.cancelled)?.[0];
+    if (!alreadyCancelled && existingCancelledDate) {
+      notify(`De baaldag is al ingezet op ${fmtDate(existingCancelledDate)}.`, true);
+      return;
+    }
+    const cancelledDates = new Set(
+      Object.entries(sched || {}).filter(([, entry]) => entry?.cancelled).map(([d]) => d)
+    );
+    if (alreadyCancelled) cancelledDates.delete(date);
+    else cancelledDates.add(date);
+    const newSched = buildSchedule(players, avail, matchDates, cancelledDates);
+    setSched(newSched);
+    const rows = Object.entries(newSched).map(([matchDate, data]) => ({ date: matchDate, data }));
+    await db.from("schedule").delete().neq("date", "____");
+    await db.from("schedule").insert(rows);
+    notify(alreadyCancelled ? "Baaldag teruggedraaid; verdeling opnieuw berekend." : "Baaldag ingezet; skips eerlijk herverdeeld.");
+  }
 
   const navItems = [
     { id: "home",   label: "SPELERS", icon: "" },
+    { id: "presence", label: "AANWEZIG", icon: "" },
     { id: "roster", label: "ROOSTER", icon: "" },
     { id: "competition", label: "COMPETITIE", icon: "" },
   ];
@@ -1269,8 +1348,14 @@ export default function App() {
               motmVotesForRound={motmVotesForRound}
               onCastPublicMotmVote={castPublicMotmVote}
               nextRosterInfo={nextRosterInfo}
+            />
+          )}
+          {view === "presence" && (
+            <PresenceView
+              players={players}
+              nextRosterInfo={nextRosterInfo}
               matchPresence={matchPresence}
-              onConfirmMatchPresence={confirmMatchPresence}
+              onTogglePresence={toggleMatchPresence}
             />
           )}
           {view === "roster" && (
@@ -1300,14 +1385,18 @@ export default function App() {
               motmRoundVotesTotal={Object.values(motmVotesForRound).length}
               motmRoundLeaderboard={motmRoundLeaderboard}
               motmSeasonTop3={motmSeasonTop3}
+              rosterNeedsRegeneration={rosterNeedsRegeneration}
+              availabilityChanges={availabilityChanges}
+              toggleCancelledMatch={toggleCancelledMatch}
+              competitionData={competitionData}
+              refreshCompetitionData={refreshCompetitionData}
+              competitionRefreshing={competitionRefreshing}
             />
           )}
           {view === "player" && activePlayer && (
             <PlayerView
               player={activePlayer} players={players} sched={sched} avail={avail}
               matchDates={matchDates} toggleAvail={toggleAvail} mySchedule={mySchedule}
-              swapReq={swapReq} startSwap={startSwap} sendSwap={sendSwap}
-              myOffers={myOffers} acceptSwap={acceptSwap} declineSwap={declineSwap}
               playerStats={playerStats}
               competitionData={competitionData}
               competitionUnlocked={competitionUnlocked}
@@ -1327,7 +1416,7 @@ export default function App() {
 }
 
 // ── HOME VIEW ─────────────────────────────────────────────────────────────────
-function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData, motmWeekLabel, motmWinner, motmWinnerVotes, motmSeasonLeader, motmSeasonLeaderWins, motmSeasonTop3, motmVotesForRound, onCastPublicMotmVote, nextRosterInfo, matchPresence, onConfirmMatchPresence }) {
+function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData, motmWeekLabel, motmWinner, motmWinnerVotes, motmSeasonLeader, motmSeasonLeaderWins, motmSeasonTop3, motmVotesForRound, onCastPublicMotmVote, nextRosterInfo }) {
   const comicTileGradients = [
     "linear-gradient(160deg, #57b8ff, #318fdb)",
     "linear-gradient(160deg, #ffb347, #f48a1f)",
@@ -1349,21 +1438,23 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
   const [publicChoice, setPublicChoice] = useState("");
   const [publicVoteOpen, setPublicVoteOpen] = useState(false);
   const publicCurrentVote = motmVotesForRound?.[PUBLIC_VOTER_ID] || "";
-  const now = new Date();
-  const nextClubMatch = competitionData?.nextGames
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const upcomingClubMatches = (competitionData?.nextGames || [])
     ?.filter(m => m.home === "Glory Boyz FC" || m.away === "Glory Boyz FC")
     .filter(m => {
       const dt = parseNlDateTime(m.date, m.time);
-      return dt ? dt >= now : false;
+      return dt ? dt >= todayStart : false;
     })
     .sort((a, b) => {
       const ta = parseNlDateTime(a.date, a.time)?.getTime() || 0;
       const tb = parseNlDateTime(b.date, b.time)?.getTime() || 0;
       return ta - tb;
-    })[0];
-  const nextOpponent = nextClubMatch
-    ? (nextClubMatch.home === "Glory Boyz FC" ? nextClubMatch.away : nextClubMatch.home)
-    : null;
+    });
+  const nextMatchDay = upcomingClubMatches[0]?.date || null;
+  const nextClubMatches = nextMatchDay
+    ? upcomingClubMatches.filter(match => match.date === nextMatchDay)
+    : [];
   const lastGbResult = competitionData?.lastRoundResults?.find(
     r => r.home === "Glory Boyz FC" || r.away === "Glory Boyz FC"
   );
@@ -1373,26 +1464,36 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
 
   return (
     <div>
-      {nextClubMatch && (
-        <Panel title="AANKOMENDE WEDSTRIJD" color={G.green} icon="📅">
-          <Card style={{ padding:"12px 14px", background:G.paperSoft, boxShadow:"none" }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10, flexWrap:"wrap" }}>
-              <div style={{ fontFamily:"Bangers, cursive", fontSize:24, letterSpacing:0.8 }}>
-                Glory Boyz FC <span style={{ fontWeight:700 }}>VS</span> {nextOpponent}
-              </div>
-              <Tag bg={G.green}>{nextClubMatch.date} {nextClubMatch.time}</Tag>
-            </div>
-          </Card>
+      {nextClubMatches.length > 0 && (
+        <Panel title={nextClubMatches.length > 1 ? "AANKOMENDE WEDSTRIJDEN" : "AANKOMENDE WEDSTRIJD"} color={G.green} icon="📅">
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {nextClubMatches.map((match, index) => {
+              const opponent = match.home === "Glory Boyz FC" ? match.away : match.home;
+              return (
+                <Card key={`${match.date}-${match.time}-${match.home}-${match.away}`} style={{ padding:"12px 14px", background:G.paperSoft, boxShadow:"none" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+                    <div>
+                      {nextClubMatches.length > 1 && (
+                        <div style={{ fontSize: 10, color: G.gold, fontWeight: 800, letterSpacing: 1, marginBottom: 3 }}>
+                          WEDSTRIJD {index + 1} VAN {nextClubMatches.length}
+                        </div>
+                      )}
+                      <div style={{ fontFamily:"Bangers, cursive", fontSize:24, letterSpacing:0.8 }}>
+                        Glory Boyz FC <span style={{ fontWeight:700 }}>VS</span> {opponent}
+                      </div>
+                    </div>
+                    <Tag bg={G.green}>{match.date} {match.time}</Tag>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 8, fontSize: 10, color: "#8fa3c2", textAlign: "right" }}>
+            {competitionData.updatedLabel} · automatisch elk uur
+          </div>
         </Panel>
       )}
       <Panel title="WIE BEN JIJ?" color={G.blue} icon="👤">
-        {nextRosterInfo && sched && (
-          <Card style={{ padding: "10px 12px", background: G.paperSoft, boxShadow: "none", marginBottom: 10 }}>
-            <p style={{ fontSize: 13, lineHeight: 1.65, margin: 0 }}>
-              Sta je bij de eerstvolgende wedstrijd (<strong>{fmtDate(nextRosterInfo.date)}</strong>) op het rooster? Zet dan het vinkje <strong>Ik ben erbij</strong> op je eigen tegel — even ter bevestiging voor het team.
-            </p>
-          </Card>
-        )}
         {nextRosterInfo && sched && nextRosterInfo.shortBy > 0 && (
           <div
             style={{
@@ -1414,18 +1515,13 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
         <div className="home-player-grid">
           {players.map((p, i) => {
             const tileBg = comicTileGradients[i % comicTileGradients.length];
-            const pidStr = String(p.id);
-            const onNextRoster = !!(nextRosterInfo?.playerIds.some(id => String(id) === pidStr));
-            const confirmed = !!(nextRosterInfo && matchPresence[nextRosterInfo.date]?.[pidStr]);
             return (
-            <div key={p.id} style={{ position:"relative" }}>
-              <button onClick={() => { onPlayerTileClick?.(p); setActivePlayer(p); setView("player"); }} className="card-hover btn-press anim-slidein comic-tile" style={{ animationDelay:(i*0.06)+"s",
+              <button key={p.id} onClick={() => { onPlayerTileClick?.(p); setActivePlayer(p); setView("player"); }} className="card-hover btn-press anim-slidein comic-tile" style={{ animationDelay:(i*0.06)+"s",
                 width:"100%",
                 background: tileBg, border:"2px solid #0d1118", borderRadius:14,
                 boxShadow:"0 10px 20px rgba(0,0,0,0.30), 3px 3px 0 #0d1118", padding:"12px 8px", cursor:"pointer",
                 display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6,
                 aspectRatio:"1 / 1",
-                paddingBottom: onNextRoster ? 36 : 12,
               }}>
                 <span style={{
                   display:"inline-flex", alignItems:"center", justifyContent:"center",
@@ -1440,84 +1536,6 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
                   textAlign:"center", color:"#f9fbff", textShadow:"0 2px 6px rgba(0,0,0,0.35)"
                 }}>{p.name}</span>
               </button>
-              {onNextRoster && confirmed && (
-                <div
-                  title="Opgeslagen"
-                  style={{
-                    position: "absolute",
-                    bottom: 7,
-                    left: 8,
-                    right: 8,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                    pointerEvents: "none",
-                    zIndex: 4,
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 14,
-                      height: 14,
-                      borderRadius: 3,
-                      border: "1px solid rgba(111, 207, 151, 0.55)",
-                      background: "rgba(67, 185, 123, 0.22)",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 9,
-                      lineHeight: 1,
-                      color: "#b8e8cc",
-                    }}
-                  >✓</span>
-                  <span style={{ fontFamily: "'Source Sans 3', sans-serif", fontSize: 10.5, fontWeight: 600, letterSpacing: 0.02, color: "rgba(236, 244, 255, 0.78)" }}>
-                    er bij
-                  </span>
-                </div>
-              )}
-              {onNextRoster && !confirmed && (
-                <div style={{ position: "absolute", left: 8, right: 8, bottom: 7, zIndex: 5 }}>
-                  <button
-                    type="button"
-                    onClick={() => onConfirmMatchPresence(nextRosterInfo.date, p.id)}
-                    style={{
-                      width: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "flex-start",
-                      gap: 8,
-                      padding: "5px 7px",
-                      borderRadius: 8,
-                      border: "1px solid rgba(255, 255, 255, 0.22)",
-                      background: "rgba(13, 17, 24, 0.35)",
-                      boxShadow: "none",
-                      cursor: "pointer",
-                      fontFamily: "'Source Sans 3', sans-serif",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      letterSpacing: 0.01,
-                      color: "rgba(241, 245, 250, 0.88)",
-                      textAlign: "left",
-                    }}
-                  >
-                    <span
-                      aria-hidden
-                      style={{
-                        width: 14,
-                        height: 14,
-                        borderRadius: 3,
-                        border: "1px solid rgba(255, 255, 255, 0.38)",
-                        background: "rgba(0, 0, 0, 0.12)",
-                        flexShrink: 0,
-                        display: "inline-block",
-                      }}
-                    />
-                    <span>Ik ben erbij</span>
-                  </button>
-                </div>
-              )}
-            </div>
             );
           })}
         </div>
@@ -1662,6 +1680,85 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
   );
 }
 
+// ── PRESENCE VIEW ─────────────────────────────────────────────────────────────
+function PresenceView({ players, nextRosterInfo, matchPresence, onTogglePresence }) {
+  const [selectedPlayerId, setSelectedPlayerId] = useState("");
+
+  if (!nextRosterInfo) {
+    return (
+      <Panel title="AANWEZIGHEID" color={G.green} icon="✅">
+        <Card style={{ padding: 28, textAlign: "center", background: G.paperSoft }}>
+          Er staat nog geen komende wedstrijd in het rooster.
+        </Card>
+      </Panel>
+    );
+  }
+
+  const rosterPlayers = players.filter(player =>
+    nextRosterInfo.playerIds.some(id => String(id) === String(player.id))
+  );
+  const selectedPlayer = rosterPlayers.find(player => String(player.id) === String(selectedPlayerId));
+  const isPresent = !!(selectedPlayer && matchPresence[nextRosterInfo.date]?.[String(selectedPlayer.id)]);
+  const confirmedCount = rosterPlayers.filter(player =>
+    matchPresence[nextRosterInfo.date]?.[String(player.id)]
+  ).length;
+
+  return (
+    <Panel title="BEN JIJ ERBIJ?" color={G.green} icon="✅">
+      <Card style={{ padding: "18px", background: G.paperSoft, marginBottom: 14 }}>
+        <div style={{ fontFamily: "Bangers, cursive", fontSize: 26, letterSpacing: 1 }}>
+          {fmtDate(nextRosterInfo.date)}
+        </div>
+        {nextRosterInfo.matchCount > 1 && (
+          <Tag bg={G.orange}>{nextRosterInfo.matchCount} WEDSTRIJDEN OP DEZE DAG</Tag>
+        )}
+        <p style={{ color: "#b7c6de", marginTop: 5, lineHeight: 1.6 }}>
+          Kies je naam en bevestig duidelijk of je bij de eerstvolgende wedstrijd aanwezig bent.
+        </p>
+      </Card>
+
+      <Card style={{ padding: 18, background: "#253758", borderColor: "#3a527f" }}>
+        <label style={{ display: "block", fontWeight: 800, marginBottom: 8 }}>1. Kies je naam</label>
+        <select
+          value={selectedPlayerId}
+          onChange={event => setSelectedPlayerId(event.target.value)}
+          style={{ width: "100%", padding: "12px 14px", borderRadius: 9, border: "2px solid " + G.line, background: "#111722", color: G.ink, fontSize: 16 }}
+        >
+          <option value="">Selecteer je naam…</option>
+          {rosterPlayers.map(player => <option key={player.id} value={player.id}>{player.name}</option>)}
+        </select>
+
+        <button
+          type="button"
+          disabled={!selectedPlayer}
+          onClick={() => selectedPlayer && onTogglePresence(nextRosterInfo.date, selectedPlayer.id)}
+          style={{
+            width: "100%",
+            marginTop: 14,
+            padding: "16px",
+            borderRadius: 10,
+            border: "3px solid " + (isPresent ? G.green : G.ink),
+            background: !selectedPlayer ? "#596275" : isPresent ? "rgba(67,185,123,0.24)" : G.gold,
+            color: isPresent ? "#d8ffe9" : "#111722",
+            fontFamily: "Bangers, cursive",
+            fontSize: 23,
+            letterSpacing: 1.2,
+            cursor: selectedPlayer ? "pointer" : "not-allowed",
+            opacity: selectedPlayer ? 1 : 0.55,
+          }}
+        >
+          {isPresent ? "✓ IK BEN ERBIJ — AANGEVINKT" : "□ IK BEN ERBIJ"}
+        </button>
+        {isPresent && <p style={{ textAlign: "center", color: "#b8e8cc", marginTop: 9 }}>Opgeslagen. Klik opnieuw als je dit wilt wijzigen.</p>}
+      </Card>
+
+      <div style={{ marginTop: 14, fontSize: 12, color: "#9fb2ce", textAlign: "center" }}>
+        {confirmedCount} van {rosterPlayers.length} spelers hebben bevestigd
+      </div>
+    </Panel>
+  );
+}
+
 // ── ROSTER VIEW ───────────────────────────────────────────────────────────────
 function RosterView({ players, sched, avail, matchDates }) {
   const [openDate, setOpenDate] = useState(null);
@@ -1681,6 +1778,7 @@ function RosterView({ players, sched, avail, matchDates }) {
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           {matchDates.map((dateObj, i) => {
             const date = typeof dateObj === "string" ? dateObj : dateObj.date;
+            const matchCount = typeof dateObj === "string" ? 1 : (dateObj.match_count || 1);
             const entry = sched[date];
             if (!entry) return null;
             const isOpen = openDate === date;
@@ -1705,7 +1803,9 @@ function RosterView({ players, sched, avail, matchDates }) {
                     }}>{i+1}</div>
                     <div>
                       <div style={{ fontFamily:"Bangers, cursive", fontSize:18, letterSpacing:1 }}>{fmtDate(date)}</div>
-                      <div style={{ fontSize:12, color:"#c6d7ef", marginTop:1, fontWeight:600 }}>{present.length} aanwezig · {entry.skipped?.length||0} skippen</div>
+                      <div style={{ fontSize:12, color: entry.cancelled ? G.red : "#c6d7ef", marginTop:1, fontWeight:600 }}>
+                        {entry.cancelled ? "BAALDAG · WEDSTRIJD VERVALLEN" : `${matchCount} wedstrijd${matchCount === 1 ? "" : "en"} · ${present.length} aanwezig · ${entry.skipped?.length || 0} skippen`}
+                      </div>
                     </div>
                   </div>
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -1721,7 +1821,12 @@ function RosterView({ players, sched, avail, matchDates }) {
                     <span style={{ fontFamily:"Bangers, cursive", fontSize:16, color:"#dbe7fa" }}>{isOpen?"▲":"▼"}</span>
                   </div>
                 </div>
-                {isOpen && (
+                {isOpen && entry.cancelled && (
+                  <div style={{ marginTop:14, paddingTop:12, borderTop:"2px dashed "+G.line }}>
+                    Deze ronde telt niet mee als gespeelde wedstrijd of als skip.
+                  </div>
+                )}
+                {isOpen && !entry.cancelled && (
                   <div style={{ marginTop:14, paddingTop:12, borderTop:"2px dashed "+G.line }}>
                     <div style={{ marginBottom:10 }}>
                       <div style={{ fontFamily:"Bangers, cursive", fontSize:15, letterSpacing:1, color:G.green, marginBottom:7 }}>✓ AANWEZIG</div>
@@ -1756,13 +1861,21 @@ function RosterView({ players, sched, avail, matchDates }) {
       <Panel title="AANWEZIGHEID OVERZICHT" color={G.brown} icon="📊">
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
           {players.map(p => {
-            const pc = matchDates.filter(dateObj => {
+            const activeDates = matchDates.filter(dateObj => {
+              const date = typeof dateObj === "string" ? dateObj : dateObj.date;
+              return sched[date] && !sched[date].cancelled;
+            });
+            const pc = activeDates.reduce((total, dateObj) => {
               const date = typeof dateObj === "string" ? dateObj : dateObj.date;
               const e = sched[date];
-              return e && (e.keeper?.id===p.id || e.players?.some(fp => fp.id===p.id));
-            }).length;
-            const sc = matchDates.length - pc;
-            const pct = Math.round((pc/matchDates.length)*100);
+              const plays = e && (e.keeper?.id===p.id || e.players?.some(fp => fp.id===p.id));
+              const count = typeof dateObj === "string" ? 1 : Math.max(1, Number(dateObj.match_count) || 1);
+              return total + (plays ? count : 0);
+            }, 0);
+            const totalMatches = activeDates.reduce((total, dateObj) =>
+              total + (typeof dateObj === "string" ? 1 : Math.max(1, Number(dateObj.match_count) || 1)), 0);
+            const sc = totalMatches - pc;
+            const pct = totalMatches ? Math.round((pc/totalMatches)*100) : 0;
             return (
               <Card key={p.id} style={{ padding:"10px 14px" }}>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
@@ -1959,7 +2072,7 @@ function AdminLogin({ adminPwInput, setAdminPwInput, adminPwError, tryAdminLogin
 }
 
 // ── ADMIN VIEW ────────────────────────────────────────────────────────────────
-function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule, adminTab, setAdminTab, saveMatchDates, addPlayer, removePlayer, savePlayerName, playerStats, updatePlayerStats, motmWeekLabel, motmRoundVotesTotal, motmRoundLeaderboard, motmSeasonTop3, updatePlayerInjuryStatus, competitionData, refreshCompetitionData, competitionRefreshing }) {
+function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule, adminTab, setAdminTab, saveMatchDates, addPlayer, removePlayer, savePlayerName, playerStats, updatePlayerStats, motmWeekLabel, motmRoundVotesTotal, motmRoundLeaderboard, motmSeasonTop3, updatePlayerInjuryStatus, competitionData, refreshCompetitionData, competitionRefreshing, rosterNeedsRegeneration, availabilityChanges, toggleCancelledMatch }) {
   return (
     <div>
       <div className="admin-tabs">
@@ -1982,6 +2095,18 @@ function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule
 
       {adminTab === "schedule" && (
         <Panel title="BEHEER ROOSTER" color={G.red} icon="⚙️">
+          {rosterNeedsRegeneration && (
+            <Card style={{ padding: "14px 16px", marginBottom: 14, background: "rgba(212,90,74,0.18)", borderColor: G.red }}>
+              <div style={{ fontFamily: "Bangers, cursive", color: G.red, fontSize: 22, letterSpacing: 1 }}>
+                ⚠ ROOSTER IS VEROUDERD
+              </div>
+              <p style={{ fontSize: 13, marginTop: 5, lineHeight: 1.55 }}>
+                {availabilityChanges.length > 0
+                  ? `Beschikbaarheid gewijzigd voor ${availabilityChanges.map(fmtDate).join(", ")}.`
+                  : "De Powerleague-speeldata zijn gewijzigd."} Genereer het rooster opnieuw.
+              </p>
+            </Card>
+          )}
           <div style={{ marginBottom:14, display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
             <Btn bg={G.red} onClick={genSchedule}>🔄 GENEREER ROOSTER</Btn>
             <span style={{ fontSize:12, color:"#666", fontStyle:"italic" }}>Eerlijk algoritme + voorkeuren</span>
@@ -1995,17 +2120,23 @@ function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule
                 const entry = sched[date];
                 if (!entry) return null;
                 return (
-                  <Card key={date} style={{ padding:"12px 14px" }}>
+                  <Card key={date} style={{ padding:"12px 14px", opacity: entry.cancelled ? 0.72 : 1, background: entry.cancelled ? "rgba(212,90,74,0.10)" : G.paper }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
                       <div>
                         <span style={{ fontFamily:"Bangers, cursive", fontSize:18, letterSpacing:1 }}>RONDE {i+1}</span>
                         <span style={{ marginLeft:10, fontSize:12, color:"#666" }}>{fmtDate(date)}</span>
                       </div>
                       <div style={{ fontSize:11, display:"flex", gap:8 }}>
+                        <Btn small bg={entry.cancelled ? G.green : G.red} onClick={() => toggleCancelledMatch(date)}>
+                          {entry.cancelled ? "BAALDAG TERUGDRAAIEN" : "BAALDAG"}
+                        </Btn>
                         {entry.honored>0 && <span style={{ color:G.green, fontWeight:700 }}>✓ {entry.honored} voorkeur ok</span>}
                         {entry.missed>0 && <span style={{ color:G.orange, fontWeight:700 }}>⚡ {entry.missed} kon niet</span>}
                       </div>
                     </div>
+                    {entry.cancelled && <Tag bg={G.red}>WEDSTRIJD VERVALLEN — TELT NIET ALS SKIP</Tag>}
+                    {!entry.cancelled && (
+                      <>
                     <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:entry.skipped?.length?8:0 }}>
                       {entry.keeper && <Tag bg={G.orange}>🧤 {entry.keeper.name}</Tag>}
                       {entry.players?.map(p => {
@@ -2020,6 +2151,8 @@ function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule
                           return <Tag key={p.id} bg={had?G.brown:"#bbb"}>{p.name}{had?" ⭐":""}</Tag>;
                         })}
                       </div>
+                    )}
+                      </>
                     )}
                   </Card>
                 );
@@ -2129,7 +2262,7 @@ function AdminView({ players, sched, avail, matchDates, toggleAvail, genSchedule
 // ── DATES VIEW ────────────────────────────────────────────────────────────────
 function DatesView({ matchDates, saveMatchDates, genSchedule }) {
   const { competitionData, refreshCompetitionData, competitionRefreshing } = useCompetitionContext();
-  const [dates, setDates] = useState([...matchDates]);
+  const [dates, setDates] = useState(matchDates.map(item => typeof item === "string" ? item : item.date));
   const [saved, setSaved] = useState(false);
 
   function updateDate(i, val) {
@@ -2143,21 +2276,17 @@ function DatesView({ matchDates, saveMatchDates, genSchedule }) {
     await saveMatchDates(valid);
     setDates(valid);
     setSaved(true);
-    genSchedule();
+    genSchedule(valid);
   }
 
   async function importFromCompetition() {
     await refreshCompetitionData({ silent: false });
     const competitionDates = generateMatchDatesFromCompetition(competitionData);
     if (competitionDates.length > 0) {
-      const formattedDates = competitionDates.map(d => {
-        const [day, month, year] = d.date.split('/');
-        return { date: `${year}-${month}-${day}`, match_count: d.match_count };
-      });
-      setDates(formattedDates);
-      await saveMatchDates(formattedDates);
+      setDates(competitionDates.map(item => item.date));
+      await saveMatchDates(competitionDates);
       setSaved(true);
-      genSchedule();
+      genSchedule(competitionDates);
     }
   }
 
@@ -2165,7 +2294,7 @@ function DatesView({ matchDates, saveMatchDates, genSchedule }) {
     <Panel title="SPEELDATA BEHEREN" color={G.blue} icon="📆">
       <Card style={{ padding:"12px 14px", marginBottom:14, background:G.paperSoft, boxShadow:"none" }}>
         <p style={{ fontSize:13, lineHeight:1.7 }}>
-          Voer hier de speeldatums in, of importeer ze direct uit de Powerleague competitiegegevens. Na opslaan of importeren wordt het rooster automatisch herberekend.
+          Speeldata worden automatisch uit de Powerleague-competitie opgehaald. Handmatig aanpassen blijft beschikbaar als noodoptie.
         </p>
         <Btn bg={G.orange} onClick={importFromCompetition} disabled={competitionRefreshing}>
           {competitionRefreshing ? "⏳ VERVERSEN..." : "📅 IMPORT VANUIT COMPETITIE"}
@@ -2190,9 +2319,8 @@ function DatesView({ matchDates, saveMatchDates, genSchedule }) {
               {date ? new Date(date+"T00:00:00").toLocaleDateString("nl-NL",{weekday:"short"}) : ""}
             </span>
             <Btn small bg={G.red} onClick={() => removeDate(i)}>🗑</Btn>
-            </Card>
-          );
-        })}
+          </Card>
+        ))}
       </div>
       <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
         <Btn bg={G.green} onClick={addDate}>➕ DATUM TOEVOEGEN</Btn>
@@ -2218,10 +2346,10 @@ function CompetitionProvider({ children, value }) {
 }
 
 // ── PLAYER VIEW ───────────────────────────────────────────────────────────────
-function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, mySchedule, swapReq, startSwap, sendSwap, myOffers, acceptSwap, declineSwap, playerStats, competitionData, competitionUnlocked, motmWeekLabel, motmVotesForRound, motmWinner, motmWinnerVotes, motmSeasonLeader, motmSeasonLeaderWins, onCastMotmVote }) {
+function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, mySchedule, playerStats, competitionData, competitionUnlocked, motmWeekLabel, motmVotesForRound, motmWinner, motmWinnerVotes, motmSeasonLeader, motmSeasonLeaderWins, onCastMotmVote }) {
   const schedule = mySchedule(player.id);
-  const playCount = schedule.filter(d => d.playing).length;
-  const skipCount = schedule.filter(d => !d.playing).length;
+  const playCount = schedule.reduce((total, item) => total + (item.playing && !item.cancelled ? item.matchCount : 0), 0);
+  const skipCount = schedule.reduce((total, item) => total + (!item.playing && !item.cancelled ? item.matchCount : 0), 0);
   const goals = playerStats[player.id]?.goals || 0;
   const assists = playerStats[player.id]?.assists || 0;
   const [motmChoice, setMotmChoice] = useState("");
@@ -2303,56 +2431,35 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
         </div>
       </Card>
 
-      {myOffers.length > 0 && (
-        <Panel title="RUILVERZOEKEN!" color={G.red} icon="🔄">
-          {myOffers.map((offer, idx) => {
-            const from = players.find(p => p.id===offer.fromId);
-            return (
-              <Card key={idx} style={{ padding:"12px 14px", marginBottom:8, background:G.paperSoft }}>
-                <p style={{ fontWeight:700, marginBottom:10 }}>
-                  <strong>{from?.name}</strong> wil ruilen voor Ronde {offer.di+1} ({fmtDate(matchDates[offer.di])})
-                </p>
-                <div style={{ display:"flex", gap:8 }}>
-                  <Btn small bg={G.green} onClick={() => acceptSwap(offer)}>✓ ACCEPTEREN</Btn>
-                  <Btn small bg={G.red} onClick={() => declineSwap(offer)}>✕ AFWIJZEN</Btn>
-                </div>
-              </Card>
-            );
-          })}
-        </Panel>
-      )}
-
       <Panel title="MIJN SPEELSCHEMA" color={G.green} icon="📅">
         {!sched || Object.keys(sched).length===0 ? (
           <div style={{ fontSize:14, color:"#888", fontStyle:"italic", padding:"16px 0" }}>Nog geen rooster. Vraag de admin.</div>
         ) : (
           <>
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-            {schedule.map(({ date, i, playing, entry }) => {
+            {schedule.map(({ date, i, playing, cancelled, matchCount, entry }) => {
                 const isFree = avail[player.id]?.[date];
-                const isActive = swapReq?.pid===player.id && swapReq?.i===i;
                 const teammates = entry ? [entry.keeper,...(entry.players||[])].filter(p => p && p.id!==player.id) : [];
 
                 return (
-                  <Card key={date} color={isActive?G.red:playing?G.green:undefined}
-                    style={{ padding:"10px 13px", background:isActive?"rgba(255,154,61,0.15)":playing?"rgba(63,218,139,0.12)":G.paperSoft }}>
+                  <Card key={date} color={playing?G.green:undefined}
+                    style={{ padding:"10px 13px", background:playing?"rgba(63,218,139,0.12)":G.paperSoft }}>
                     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, flexWrap:"wrap" }}>
                       <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                         <div style={{ width:8, height:8, borderRadius:"50%", flexShrink:0, background:playing?G.green:"#6f7a90", border:"2px solid "+G.line }}/>
                         <div>
                           <div style={{ fontFamily:"Bangers, cursive", fontSize:17, letterSpacing:1 }}>RONDE {i+1} — {fmtDate(date)}</div>
+                          {matchCount > 1 && <div style={{ fontSize: 10, color: G.orange, fontWeight: 800 }}>{matchCount} WEDSTRIJDEN</div>}
                           {playing && teammates.length>0 && (
                             <div style={{ fontSize:11, color:"#d7e3f7", marginTop:1 }}>Met: {teammates.map(p=>p.name).join(", ")}</div>
                           )}
                         </div>
                       </div>
                       <div style={{ display:"flex", alignItems:"center", gap:7, flexWrap:"wrap" }}>
-                        {playing ? (
-                          <>
-                            <Tag bg={G.green}>✓ SPEELT</Tag>
-                            {!swapReq && <Btn small bg={G.orange} onClick={() => startSwap(player.id, date)}>🔄 RUILEN</Btn>}
-                            {isActive && <Tag bg={G.red}>↓ KIES SPELER</Tag>}
-                          </>
+                        {cancelled ? (
+                          <Tag bg={G.red}>BAALDAG · VERVALT</Tag>
+                        ) : playing ? (
+                          <Tag bg={G.green}>✓ SPEELT</Tag>
                         ) : (
                           <Tag bg="#aaa">— SKIPT</Tag>
                         )}
@@ -2372,19 +2479,6 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
                 );
               })}
             </div>
-            {swapReq && (
-              <Card style={{ marginTop:14, padding:"14px 16px", background:G.paperSoft, borderColor:G.red, boxShadow:"0 10px 18px rgba(255,93,77,0.22)" }}>
-                <div style={{ fontFamily:"Bangers, cursive", fontSize:18, letterSpacing:1, color:G.red, marginBottom:10 }}>
-                  🔄 {fmtDate(swapReq.date)} — KIES MET WIE:
-                </div>
-                <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-                  {players.filter(p => p.id!==player.id).map(p => (
-                    <Btn key={p.id} small bg={G.blue} onClick={() => sendSwap(p.id, swapReq.date)}>{p.name}</Btn>
-                  ))}
-                  <Btn small outline onClick={() => startSwap(null,null)}>ANNULEREN</Btn>
-                </div>
-              </Card>
-            )}
           </>
         )}
       </Panel>
@@ -2399,6 +2493,7 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
           {matchDates.map((dateObj, i) => {
             const date = typeof dateObj === "string" ? dateObj : dateObj.date;
             const isFree = avail[player.id]?.[date];
+            const isCancelled = !!sched?.[date]?.cancelled;
             const isPlaying = sched ? (sched[date]?.keeper?.id===player.id || sched[date]?.players?.some(p=>p.id===player.id)) : null;
             return (
               <button key={date} onClick={() => toggleAvail(player.id, date)} style={{
@@ -2411,7 +2506,9 @@ function PlayerView({ player, players, sched, avail, matchDates, toggleAvail, my
                 <div style={{ fontSize:10, color:"#d7e3f7", marginBottom:2 }}>Ronde {i+1}</div>
                 <div style={{ fontFamily:"Bangers, cursive", fontSize:14, letterSpacing:0.5, color:"#f7fbff" }}>{fmtDate(date)}</div>
                 {isFree && <div style={{ fontSize:10, marginTop:4, fontWeight:900, color:G.red }}>VOORKEUR VRIJ!</div>}
-                {sched && isPlaying!==null && (
+                {isCancelled ? (
+                  <div style={{ fontSize:10, marginTop:3, color:G.red, fontWeight:700 }}>baaldag · vervalt</div>
+                ) : sched && isPlaying!==null && (
                   <div style={{ fontSize:10, marginTop:3, color:isPlaying?G.green:"#d7e3f7", fontWeight:700 }}>
                     {isPlaying?"↗ speelt":"↘ skipt"}
                   </div>
