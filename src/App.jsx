@@ -10,21 +10,20 @@ const PUBLIC_VOTER_ID = 9999;
 
 // ── DEFAULTS ──────────────────────────────────────────────────────────────────
 const DEFAULT_DATES = [
-  { date: "2025-04-17", match_count: 1 },
-  { date: "2025-04-24", match_count: 1 },
-  { date: "2025-05-01", match_count: 1 },
-  { date: "2025-05-08", match_count: 1 },
-  { date: "2025-05-15", match_count: 1 },
-  { date: "2025-05-22", match_count: 1 },
-  { date: "2025-05-29", match_count: 1 },
-  { date: "2025-06-05", match_count: 1 },
-  { date: "2025-06-12", match_count: 1 },
-  { date: "2025-06-19", match_count: 1 },
-  { date: "2025-06-26", match_count: 1 },
-  { date: "2025-07-03", match_count: 1 },
-  { date: "2025-07-10", match_count: 1 },
-  { date: "2025-07-17", match_count: 1 },
-  { date: "2026-05-28", match_count: 2 }
+  { date: "2026-04-16", match_count: 1 },
+  { date: "2026-04-23", match_count: 1 },
+  { date: "2026-04-30", match_count: 1 },
+  { date: "2026-05-07", match_count: 1 },
+  { date: "2026-05-14", match_count: 1 },
+  { date: "2026-05-21", match_count: 1 },
+  { date: "2026-05-28", match_count: 2 },
+  { date: "2026-06-04", match_count: 1 },
+  { date: "2026-06-11", match_count: 1 },
+  { date: "2026-06-18", match_count: 1 },
+  { date: "2026-06-25", match_count: 1 },
+  { date: "2026-07-02", match_count: 1 },
+  { date: "2026-07-09", match_count: 1 },
+  { date: "2026-07-16", match_count: 1 },
 ];
 
 const DEFAULT_PLAYERS = [
@@ -120,6 +119,30 @@ function fmtDate(d) {
   return new Date(d + "T00:00:00").toLocaleDateString("nl-NL", {
     weekday: "short", day: "numeric", month: "short"
   });
+}
+
+function normalizeMatchDateKey(rawDate) {
+  if (!rawDate) return rawDate;
+  let date = rawDate;
+  if (rawDate.startsWith("2025-")) {
+      const old = new Date(rawDate + "T12:00:00");
+      old.setDate(old.getDate() + 364);
+      date = old.toISOString().slice(0, 10);
+  }
+  return date === "2026-07-17" ? "2026-07-16" : date;
+}
+
+function normalizeMatchDates(dates = []) {
+  const corrected = new Map();
+  dates.forEach(item => {
+    const rawDate = typeof item === "string" ? item : item.date;
+    if (!rawDate) return;
+    const date = normalizeMatchDateKey(rawDate);
+    const matchCount = typeof item === "string" ? 1 : Math.max(1, Number(item.match_count) || 1);
+    const previous = corrected.get(date);
+    corrected.set(date, { date, match_count: Math.max(previous?.match_count || 0, matchCount) });
+  });
+  return [...corrected.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
 function getThursdayRoundKey(baseDate = new Date()) {
@@ -896,8 +919,15 @@ export default function App() {
         const { data: dData } = await db.from("match_dates").select("*").order("sort_order");
         let loadedDates = [];
         if (dData && dData.length > 0) {
-          loadedDates = dData.map(d => ({ date: d.date, match_count: d.match_count || 1 }));
+          const rawDates = dData.map(d => ({ date: d.date, match_count: d.match_count || 1 }));
+          loadedDates = normalizeMatchDates(rawDates);
           setMatchDates(loadedDates);
+          const rawSignature = rawDates.map(d => `${d.date}:${d.match_count}`).join(",");
+          const normalizedSignature = loadedDates.map(d => `${d.date}:${d.match_count}`).join(",");
+          if (rawSignature !== normalizedSignature) {
+            await db.from("match_dates").delete().neq("date", "____");
+            await db.from("match_dates").insert(loadedDates.map((d, i) => ({ ...d, sort_order: i })));
+          }
         } else {
           // Seed default dates
           const rows = DEFAULT_DATES.map((d, i) => ({ date: d.date, match_count: d.match_count, sort_order: i }));
@@ -920,6 +950,7 @@ export default function App() {
             if (!key) {
               key = String(row.date_index);
             }
+            if (/^\d{4}-\d{2}-\d{2}$/.test(key)) key = normalizeMatchDateKey(key);
             availObj[row.player_id][key] = row.is_free;
           });
           setAvail(availObj);
@@ -929,8 +960,19 @@ export default function App() {
         const { data: sData } = await db.from("schedule").select("*");
         if (sData && sData.length > 0) {
           const schedObj = {};
-          sData.forEach(row => { schedObj[row.date] = row.data; });
+          let scheduleWasCorrected = false;
+          sData.forEach(row => {
+            const date = normalizeMatchDateKey(row.date);
+            if (date !== row.date) scheduleWasCorrected = true;
+            schedObj[date] = { ...row.data, date };
+          });
           setSched(schedObj);
+          if (scheduleWasCorrected) {
+            await db.from("schedule").delete().neq("date", "____");
+            await db.from("schedule").insert(
+              Object.entries(schedObj).map(([date, data]) => ({ date, data }))
+            );
+          }
         }
 
         // Load player stats (shared cross-device via Supabase)
@@ -964,7 +1006,7 @@ export default function App() {
         if (!mpErr && Array.isArray(mpData)) {
           const mp = {};
           mpData.forEach(row => {
-            const d = row.match_date;
+            const d = normalizeMatchDateKey(row.match_date);
             const pid = String(row.player_id);
             if (!mp[d]) mp[d] = {};
             mp[d][pid] = true;
@@ -1099,25 +1141,27 @@ export default function App() {
 
   // ── SAVE MATCH DATES ─────────────────────────────────────────────────────────
   async function saveMatchDates(dates) {
-    setMatchDates(dates);
+    const normalizedDates = normalizeMatchDates(dates);
+    setMatchDates(normalizedDates);
     setDatesNeedSchedule(true);
     await db.from("match_dates").delete().neq("date", "____");
-    const rows = dates.map((d, i) => ({
-      date: typeof d === "string" ? d : d.date,
-      match_count: typeof d === "string" ? 1 : (d.match_count || 1),
+    const rows = normalizedDates.map((d, i) => ({
+      date: d.date,
+      match_count: d.match_count,
       sort_order: i
     }));
     await db.from("match_dates").insert(rows);
   }
 
-  async function toggleMatchPresence(matchDate, playerId) {
+  async function toggleMatchPresence(matchDate, playerId, desiredPresence) {
     const pidStr = String(playerId);
     const wasPresent = !!matchPresence[matchDate]?.[pidStr];
+    const willBePresent = typeof desiredPresence === "boolean" ? desiredPresence : !wasPresent;
     setMatchPresence(prev => ({
       ...prev,
-      [matchDate]: { ...(prev[matchDate] || {}), [pidStr]: !wasPresent },
+      [matchDate]: { ...(prev[matchDate] || {}), [pidStr]: willBePresent },
     }));
-    const query = wasPresent
+    const query = !willBePresent
       ? db.from("match_presence").delete().eq("match_date", matchDate).eq("player_id", playerId)
       : db.from("match_presence").upsert(
         { match_date: matchDate, player_id: playerId },
@@ -1137,7 +1181,7 @@ export default function App() {
       });
       return;
     }
-    showFloat(wasPresent ? "AANGEPAST!" : "CHECK!", wasPresent ? G.orange : G.green);
+    showFloat(willBePresent ? "AANWEZIG!" : "AFWEZIG!", willBePresent ? G.green : G.orange);
   }
 
   function mySchedule(pid) {
@@ -1208,7 +1252,6 @@ export default function App() {
 
   const navItems = [
     { id: "home",   label: "SPELERS", icon: "" },
-    { id: "presence", label: "AANWEZIG", icon: "" },
     { id: "roster", label: "ROOSTER", icon: "" },
     { id: "competition", label: "COMPETITIE", icon: "" },
   ];
@@ -1348,12 +1391,6 @@ export default function App() {
               motmVotesForRound={motmVotesForRound}
               onCastPublicMotmVote={castPublicMotmVote}
               nextRosterInfo={nextRosterInfo}
-            />
-          )}
-          {view === "presence" && (
-            <PresenceView
-              players={players}
-              nextRosterInfo={nextRosterInfo}
               matchPresence={matchPresence}
               onTogglePresence={toggleMatchPresence}
             />
@@ -1416,7 +1453,7 @@ export default function App() {
 }
 
 // ── HOME VIEW ─────────────────────────────────────────────────────────────────
-function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData, motmWeekLabel, motmWinner, motmWinnerVotes, motmSeasonLeader, motmSeasonLeaderWins, motmSeasonTop3, motmVotesForRound, onCastPublicMotmVote, nextRosterInfo }) {
+function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates, playerStats, onPlayerTileClick, competitionData, motmWeekLabel, motmWinner, motmWinnerVotes, motmSeasonLeader, motmSeasonLeaderWins, motmSeasonTop3, motmVotesForRound, onCastPublicMotmVote, nextRosterInfo, matchPresence, onTogglePresence }) {
   const comicTileGradients = [
     "linear-gradient(160deg, #57b8ff, #318fdb)",
     "linear-gradient(160deg, #ffb347, #f48a1f)",
@@ -1493,6 +1530,12 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
           </div>
         </Panel>
       )}
+      <PresenceSection
+        players={players}
+        nextRosterInfo={nextRosterInfo}
+        matchPresence={matchPresence}
+        onTogglePresence={onTogglePresence}
+      />
       <Panel title="WIE BEN JIJ?" color={G.blue} icon="👤">
         {nextRosterInfo && sched && nextRosterInfo.shortBy > 0 && (
           <div
@@ -1681,79 +1724,43 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
 }
 
 // ── PRESENCE VIEW ─────────────────────────────────────────────────────────────
-function PresenceView({ players, nextRosterInfo, matchPresence, onTogglePresence }) {
-  const [selectedPlayerId, setSelectedPlayerId] = useState("");
-
-  if (!nextRosterInfo) {
-    return (
-      <Panel title="AANWEZIGHEID" color={G.green} icon="✅">
-        <Card style={{ padding: 28, textAlign: "center", background: G.paperSoft }}>
-          Er staat nog geen komende wedstrijd in het rooster.
-        </Card>
-      </Panel>
-    );
-  }
+function PresenceSection({ players, nextRosterInfo, matchPresence, onTogglePresence }) {
+  if (!nextRosterInfo) return null;
 
   const rosterPlayers = players.filter(player =>
     nextRosterInfo.playerIds.some(id => String(id) === String(player.id))
   );
-  const selectedPlayer = rosterPlayers.find(player => String(player.id) === String(selectedPlayerId));
-  const isPresent = !!(selectedPlayer && matchPresence[nextRosterInfo.date]?.[String(selectedPlayer.id)]);
-  const confirmedCount = rosterPlayers.filter(player =>
-    matchPresence[nextRosterInfo.date]?.[String(player.id)]
+  const presentCount = rosterPlayers.filter(player =>
+    matchPresence[nextRosterInfo.date]?.[String(player.id)] === true
   ).length;
 
   return (
-    <Panel title="BEN JIJ ERBIJ?" color={G.green} icon="✅">
-      <Card style={{ padding: "18px", background: G.paperSoft, marginBottom: 14 }}>
-        <div style={{ fontFamily: "Bangers, cursive", fontSize: 26, letterSpacing: 1 }}>
-          {fmtDate(nextRosterInfo.date)}
-        </div>
-        {nextRosterInfo.matchCount > 1 && (
-          <Tag bg={G.orange}>{nextRosterInfo.matchCount} WEDSTRIJDEN OP DEZE DAG</Tag>
-        )}
-        <p style={{ color: "#b7c6de", marginTop: 5, lineHeight: 1.6 }}>
-          Kies je naam en bevestig duidelijk of je bij de eerstvolgende wedstrijd aanwezig bent.
-        </p>
-      </Card>
-
-      <Card style={{ padding: 18, background: "#253758", borderColor: "#3a527f" }}>
-        <label style={{ display: "block", fontWeight: 800, marginBottom: 8 }}>1. Kies je naam</label>
-        <select
-          value={selectedPlayerId}
-          onChange={event => setSelectedPlayerId(event.target.value)}
-          style={{ width: "100%", padding: "12px 14px", borderRadius: 9, border: "2px solid " + G.line, background: "#111722", color: G.ink, fontSize: 16 }}
-        >
-          <option value="">Selecteer je naam…</option>
-          {rosterPlayers.map(player => <option key={player.id} value={player.id}>{player.name}</option>)}
-        </select>
-
-        <button
-          type="button"
-          disabled={!selectedPlayer}
-          onClick={() => selectedPlayer && onTogglePresence(nextRosterInfo.date, selectedPlayer.id)}
-          style={{
-            width: "100%",
-            marginTop: 14,
-            padding: "16px",
-            borderRadius: 10,
-            border: "3px solid " + (isPresent ? G.green : G.ink),
-            background: !selectedPlayer ? "#596275" : isPresent ? "rgba(67,185,123,0.24)" : G.gold,
-            color: isPresent ? "#d8ffe9" : "#111722",
-            fontFamily: "Bangers, cursive",
-            fontSize: 23,
-            letterSpacing: 1.2,
-            cursor: selectedPlayer ? "pointer" : "not-allowed",
-            opacity: selectedPlayer ? 1 : 0.55,
-          }}
-        >
-          {isPresent ? "✓ IK BEN ERBIJ — AANGEVINKT" : "□ IK BEN ERBIJ"}
-        </button>
-        {isPresent && <p style={{ textAlign: "center", color: "#b8e8cc", marginTop: 9 }}>Opgeslagen. Klik opnieuw als je dit wilt wijzigen.</p>}
-      </Card>
-
-      <div style={{ marginTop: 14, fontSize: 12, color: "#9fb2ce", textAlign: "center" }}>
-        {confirmedCount} van {rosterPlayers.length} spelers hebben bevestigd
+    <Panel title="AANWEZIGHEID" color={G.green} icon="✅">
+      <div style={{ display:"flex", justifyContent:"space-between", gap:8, alignItems:"center", marginBottom:10, flexWrap:"wrap" }}>
+        <strong>{fmtDate(nextRosterInfo.date)}</strong>
+        <span style={{ fontSize:11, color:"#9fb2ce" }}>{presentCount} van {rosterPlayers.length} aanwezig</span>
+      </div>
+      <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+        {rosterPlayers.map(player => {
+          const isPresent = matchPresence[nextRosterInfo.date]?.[String(player.id)] === true;
+          return (
+            <Card key={player.id} style={{ padding:"8px 10px", background:G.paperSoft, boxShadow:"none" }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, flexWrap:"wrap" }}>
+                <span style={{ fontFamily:"Bangers, cursive", fontSize:20, letterSpacing:.5 }}>{player.name}</span>
+                <div style={{ display:"flex", gap:5 }}>
+                  <button type="button" onClick={() => onTogglePresence(nextRosterInfo.date, player.id, true)} style={{
+                    border:"1.5px solid "+G.green, borderRadius:7, padding:"6px 9px", cursor:"pointer",
+                    background:isPresent ? G.green : "transparent", color:isPresent ? "#101820" : "#b8e8cc", fontWeight:800,
+                  }}>✓ AANWEZIG</button>
+                  <button type="button" onClick={() => onTogglePresence(nextRosterInfo.date, player.id, false)} style={{
+                    border:"1.5px solid "+G.red, borderRadius:7, padding:"6px 9px", cursor:"pointer",
+                    background:!isPresent ? G.red : "transparent", color:"#fff", fontWeight:800,
+                  }}>✕ AFWEZIG</button>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
       </div>
     </Panel>
   );
