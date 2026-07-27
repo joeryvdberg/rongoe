@@ -6,7 +6,7 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 27-7-2026, 14:09:33",
+  "updatedLabel": "Live sync op 27-7-2026, 10:57:16",
   "standings": [
     {
       "pos": 1,
@@ -176,36 +176,6 @@
       "time": "20:00",
       "home": "Fiorentina Turner",
       "away": "Los Fuegos"
-    },
-    {
-      "date": "06/08/2026",
-      "time": "20:00",
-      "home": "De Hertenjagers Reunited",
-      "away": "Glory Boyz FC"
-    },
-    {
-      "date": "13/08/2026",
-      "time": "20:00",
-      "home": "The Big 5",
-      "away": "Fiorentina Turner"
-    },
-    {
-      "date": "13/08/2026",
-      "time": "20:00",
-      "home": "De Hertenjagers Reunited",
-      "away": "De Meer"
-    },
-    {
-      "date": "13/08/2026",
-      "time": "20:00",
-      "home": "The Mohicans",
-      "away": "Los Fuegos"
-    },
-    {
-      "date": "13/08/2026",
-      "time": "21:00",
-      "home": "Glory Boyz FC",
-      "away": "Le Coq Sportif"
     }
   ],
   "lastRoundLabel": "23/07/2026",
