@@ -138,11 +138,28 @@ function normalizeMatchDates(dates = []) {
     const rawDate = typeof item === "string" ? item : item.date;
     if (!rawDate) return;
     const date = normalizeMatchDateKey(rawDate);
-    const matchCount = typeof item === "string" ? 1 : Math.max(1, Number(item.match_count) || 1);
+    const suppliedCount = typeof item === "string" ? 1 : Math.max(1, Number(item.match_count) || 1);
+    const matchCount = date === "2026-05-28" ? Math.max(2, suppliedCount) : suppliedCount;
     const previous = corrected.get(date);
     corrected.set(date, { date, match_count: Math.max(previous?.match_count || 0, matchCount) });
   });
   return [...corrected.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+async function replaceStoredMatchDates(dates) {
+  await db.from("match_dates").delete().neq("date", "____");
+  const rows = dates.map((d, i) => ({
+    date: d.date,
+    match_count: d.match_count || 1,
+    sort_order: i,
+  }));
+  const { error } = await db.from("match_dates").insert(rows);
+  if (error?.message?.includes("match_count")) {
+    return db.from("match_dates").insert(
+      rows.map(({ date, sort_order }) => ({ date, sort_order }))
+    );
+  }
+  return { error };
 }
 
 function getThursdayRoundKey(baseDate = new Date()) {
@@ -925,13 +942,11 @@ export default function App() {
           const rawSignature = rawDates.map(d => `${d.date}:${d.match_count}`).join(",");
           const normalizedSignature = loadedDates.map(d => `${d.date}:${d.match_count}`).join(",");
           if (rawSignature !== normalizedSignature) {
-            await db.from("match_dates").delete().neq("date", "____");
-            await db.from("match_dates").insert(loadedDates.map((d, i) => ({ ...d, sort_order: i })));
+            await replaceStoredMatchDates(loadedDates);
           }
         } else {
           // Seed default dates
-          const rows = DEFAULT_DATES.map((d, i) => ({ date: d.date, match_count: d.match_count, sort_order: i }));
-          await db.from("match_dates").insert(rows);
+          await replaceStoredMatchDates(DEFAULT_DATES);
           loadedDates = DEFAULT_DATES;
           setMatchDates(DEFAULT_DATES);
         }
@@ -1144,13 +1159,7 @@ export default function App() {
     const normalizedDates = normalizeMatchDates(dates);
     setMatchDates(normalizedDates);
     setDatesNeedSchedule(true);
-    await db.from("match_dates").delete().neq("date", "____");
-    const rows = normalizedDates.map((d, i) => ({
-      date: d.date,
-      match_count: d.match_count,
-      sort_order: i
-    }));
-    await db.from("match_dates").insert(rows);
+    await replaceStoredMatchDates(normalizedDates);
   }
 
   async function toggleMatchPresence(matchDate, playerId, desiredPresence) {
@@ -1727,10 +1736,8 @@ function HomeView({ players, setView, setActivePlayer, avail, sched, matchDates,
 function PresenceSection({ players, nextRosterInfo, matchPresence, onTogglePresence }) {
   if (!nextRosterInfo) return null;
 
-  const rosterPlayers = players.filter(player =>
-    nextRosterInfo.playerIds.some(id => String(id) === String(player.id))
-  );
-  const presentCount = rosterPlayers.filter(player =>
+  const presencePlayers = players;
+  const presentCount = presencePlayers.filter(player =>
     matchPresence[nextRosterInfo.date]?.[String(player.id)] === true
   ).length;
 
@@ -1738,10 +1745,10 @@ function PresenceSection({ players, nextRosterInfo, matchPresence, onTogglePrese
     <Panel title="AANWEZIGHEID" color={G.green} icon="✅">
       <div style={{ display:"flex", justifyContent:"space-between", gap:8, alignItems:"center", marginBottom:10, flexWrap:"wrap" }}>
         <strong>{fmtDate(nextRosterInfo.date)}</strong>
-        <span style={{ fontSize:11, color:"#9fb2ce" }}>{presentCount} van {rosterPlayers.length} aanwezig</span>
+        <span style={{ fontSize:11, color:"#9fb2ce" }}>{presentCount} van {presencePlayers.length} aanwezig</span>
       </div>
       <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-        {rosterPlayers.map(player => {
+        {presencePlayers.map(player => {
           const isPresent = matchPresence[nextRosterInfo.date]?.[String(player.id)] === true;
           return (
             <Card key={player.id} style={{ padding:"8px 10px", background:G.paperSoft, boxShadow:"none" }}>
