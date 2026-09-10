@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { parseCompetitionSnapshot, competitionRecencyScore } from "../src/competition-parse.js";
 
-const SOURCE_URL = "https://www.powerleague.com/nl/competitie?league_id=fd12d044-1e65-6cbb-ee14-812e80a0f3b6&division_id=fd12d044-1e65-6cbb-ee14-812e285bfab6";
+const SOURCE_URL = "https://www.powerleague.com/nl/competitie?league_id=a2354831-ca4a-e7a8-f514-6f7b98ac035a&division_id=a2354831-ca4a-e7a8-f514-6f7b986f095a";
 const OUT_PATH = new URL("../public/competition-live.json", import.meta.url);
 
 
@@ -34,7 +34,7 @@ if (parsedBody.standings.length < 6 || parsedBody.nextGames.length < 1) {
 
 const parsed = {
   sourceUrl: SOURCE_URL,
-  leagueName: "Thursday Late League S38",
+  leagueName: "Thursday Late League S40",
   city: "Amsterdam",
   venue: "Sportspark Olympiaplein",
   format: "Men's 5s",

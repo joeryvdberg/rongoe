@@ -10,20 +10,20 @@ const PUBLIC_VOTER_ID = 9999;
 
 // ── DEFAULTS ──────────────────────────────────────────────────────────────────
 const DEFAULT_DATES = [
-  { date: "2026-04-16", match_count: 1 },
-  { date: "2026-04-23", match_count: 1 },
-  { date: "2026-04-30", match_count: 1 },
-  { date: "2026-05-07", match_count: 1 },
-  { date: "2026-05-14", match_count: 1 },
-  { date: "2026-05-21", match_count: 1 },
-  { date: "2026-05-28", match_count: 2 },
-  { date: "2026-06-04", match_count: 1 },
-  { date: "2026-06-11", match_count: 1 },
-  { date: "2026-06-18", match_count: 1 },
-  { date: "2026-06-25", match_count: 1 },
-  { date: "2026-07-02", match_count: 1 },
-  { date: "2026-07-09", match_count: 1 },
-  { date: "2026-07-16", match_count: 1 },
+  { date: "2026-08-20", match_count: 1 },
+  { date: "2026-08-27", match_count: 1 },
+  { date: "2026-09-03", match_count: 1 },
+  { date: "2026-09-10", match_count: 1 },
+  { date: "2026-09-17", match_count: 1 },
+  { date: "2026-09-24", match_count: 1 },
+  { date: "2026-10-01", match_count: 1 },
+  { date: "2026-10-08", match_count: 1 },
+  { date: "2026-10-15", match_count: 1 },
+  { date: "2026-10-22", match_count: 1 },
+  { date: "2026-10-29", match_count: 1 },
+  { date: "2026-11-05", match_count: 1 },
+  { date: "2026-11-12", match_count: 1 },
+  { date: "2026-11-19", match_count: 1 },
 ];
 
 const DEFAULT_PLAYERS = [
@@ -38,42 +38,49 @@ const DEFAULT_PLAYERS = [
 ];
 
 const COMPETITION_INFO = {
-  sourceUrl: "https://www.powerleague.com/nl/competitie?league_id=fd12d044-1e65-6cbb-ee14-812e80a0f3b6&division_id=fd12d044-1e65-6cbb-ee14-812e285bfab6",
-  leagueName: "Thursday Late League S38",
+  sourceUrl: "https://www.powerleague.com/nl/competitie?league_id=a2354831-ca4a-e7a8-f514-6f7b98ac035a&division_id=a2354831-ca4a-e7a8-f514-6f7b986f095a",
+  leagueName: "Thursday Late League S40",
   city: "Amsterdam",
   venue: "Sportspark Olympiaplein",
   format: "Men's 5s",
   gameDay: "Donderdag",
   gamePrice: "EUR 57.00 per game",
-  updatedLabel: "Scrape op 14-04-2026",
+  updatedLabel: "Bijgewerkt op 28-08-2026",
   topTeams: [
-    { pos: 1, club: "Los Fuegos", played: 11, won: 8, points: 24 },
-    { pos: 2, club: "The Mohicans", played: 10, won: 7, points: 21 },
-    { pos: 3, club: "Connaisseurs", played: 11, won: 7, points: 21 },
+    { pos: 1, club: "Gunners 071 !", played: 2, won: 2, points: 6 },
+    { pos: 2, club: "Connaisseurs", played: 2, won: 2, points: 6 },
+    { pos: 3, club: "M1 Capital & Co", played: 2, won: 1, points: 4 },
   ],
   standings: [
-    { pos: 1, club: "Los Fuegos", played: 11, won: 8, drawn: 0, lost: 3, gf: 82, ga: 66, gd: 16, points: 24 },
-    { pos: 2, club: "The Mohicans", played: 10, won: 7, drawn: 0, lost: 3, gf: 64, ga: 44, gd: 20, points: 21 },
-    { pos: 3, club: "Connaisseurs", played: 11, won: 7, drawn: 0, lost: 4, gf: 92, ga: 77, gd: 15, points: 21 },
-    { pos: 4, club: "De Hertenjagers Reunited", played: 10, won: 6, drawn: 0, lost: 4, gf: 78, ga: 66, gd: 12, points: 18 },
-    { pos: 5, club: "De Meer", played: 11, won: 6, drawn: 0, lost: 5, gf: 61, ga: 57, gd: 4, points: 18 },
-    { pos: 6, club: "The Big 5", played: 11, won: 5, drawn: 1, lost: 5, gf: 67, ga: 61, gd: 6, points: 16 },
-    { pos: 7, club: "Glory Boyz FC", played: 11, won: 2, drawn: 1, lost: 8, gf: 54, ga: 69, gd: -15, points: 7 },
-    { pos: 8, club: "FC Linksbuitenadem", played: 11, won: 1, drawn: 0, lost: 10, gf: 43, ga: 101, gd: -58, points: 3 },
+    { pos: 1, club: "Gunners 071 !", played: 2, won: 2, drawn: 0, lost: 0, gf: 24, ga: 6, gd: 18, points: 6 },
+    { pos: 2, club: "Connaisseurs", played: 2, won: 2, drawn: 0, lost: 0, gf: 29, ga: 13, gd: 16, points: 6 },
+    { pos: 3, club: "M1 Capital & Co", played: 2, won: 1, drawn: 1, lost: 0, gf: 8, ga: 3, gd: 5, points: 4 },
+    { pos: 4, club: "Glory Boyz FC", played: 2, won: 1, drawn: 0, lost: 1, gf: 14, ga: 12, gd: 2, points: 3 },
+    { pos: 5, club: "FC Ounce", played: 2, won: 1, drawn: 0, lost: 1, gf: 10, ga: 11, gd: -1, points: 3 },
+    { pos: 6, club: "Overdie Metals United", played: 2, won: 0, drawn: 1, lost: 1, gf: 6, ga: 19, gd: -13, points: 1 },
+    { pos: 7, club: "Le Coq Sportif", played: 2, won: 0, drawn: 0, lost: 2, gf: 3, ga: 13, gd: -10, points: 0 },
+    { pos: 8, club: "Bal Nassr", played: 2, won: 0, drawn: 0, lost: 2, gf: 10, ga: 27, gd: -17, points: 0 },
   ],
   nextGames: [
-    { date: "16/04/2026", time: "19:00", home: "Glory Boyz FC", away: "De Hertenjagers Reunited" },
-    { date: "16/04/2026", time: "19:00", home: "De Meer", away: "FC Linksbuitenadem" },
-    { date: "16/04/2026", time: "19:00", home: "The Big 5", away: "Los Fuegos" },
-    { date: "16/04/2026", time: "20:00", home: "The Mohicans", away: "Connaisseurs" },
-    { date: "23/04/2026", time: "20:00", home: "De Hertenjagers Reunited", away: "De Meer" },
+    { date: "03/09/2026", time: "19:00", home: "Gunners 071 !", away: "Glory Boyz FC" },
+    { date: "10/09/2026", time: "20:00", home: "Glory Boyz FC", away: "Le Coq Sportif" },
+    { date: "17/09/2026", time: "20:00", home: "Bal Nassr", away: "Glory Boyz FC" },
+    { date: "24/09/2026", time: "21:00", home: "Glory Boyz FC", away: "M1 Capital & Co" },
+    { date: "01/10/2026", time: "21:00", home: "Glory Boyz FC", away: "Overdie Metals United" },
+    { date: "08/10/2026", time: "19:00", home: "Connaisseurs", away: "Glory Boyz FC" },
+    { date: "15/10/2026", time: "20:00", home: "Glory Boyz FC", away: "FC Ounce" },
+    { date: "22/10/2026", time: "20:00", home: "Glory Boyz FC", away: "Gunners 071 !" },
+    { date: "29/10/2026", time: "21:00", home: "Le Coq Sportif", away: "Glory Boyz FC" },
+    { date: "05/11/2026", time: "21:00", home: "Glory Boyz FC", away: "Bal Nassr" },
+    { date: "12/11/2026", time: "19:00", home: "M1 Capital & Co", away: "Glory Boyz FC" },
+    { date: "19/11/2026", time: "19:00", home: "Overdie Metals United", away: "Glory Boyz FC" },
   ],
-  lastRoundLabel: "09/04/2026",
+  lastRoundLabel: "27/08/2026",
   lastRoundResults: [
-    { home: "De Hertenjagers Reunited", homeScore: 10, awayScore: 5, away: "The Big 5" },
-    { home: "Connaisseurs", homeScore: 14, awayScore: 6, away: "Los Fuegos" },
-    { home: "FC Linksbuitenadem", homeScore: 6, awayScore: 10, away: "The Mohicans" },
-    { home: "Glory Boyz FC", homeScore: 4, awayScore: 7, away: "De Meer" },
+    { home: "FC Ounce", homeScore: 2, awayScore: 7, away: "Glory Boyz FC" },
+    { home: "Bal Nassr", homeScore: 6, awayScore: 19, away: "Gunners 071 !" },
+    { home: "Le Coq Sportif", homeScore: 3, awayScore: 8, away: "M1 Capital & Co" },
+    { home: "Connaisseurs", homeScore: 19, awayScore: 6, away: "Overdie Metals United" },
   ],
 };
 const COMPETITION_FEED_PATH = `${import.meta.env.BASE_URL}competition-live.json`;
@@ -811,7 +818,10 @@ export default function App() {
     const scrapedDates = generateMatchDatesFromCompetition(competitionData);
     if (!scrapedDates.length) return;
     const todayKey = new Date().toISOString().slice(0, 10);
-    const historicalDates = matchDates.filter(dateObj => {
+    // A new Powerleague season starts with a clean roster calendar. Keep the
+    // already-played dates from this season, rather than carrying S38 dates
+    // forward from Supabase, and combine them with the live future fixtures.
+    const historicalDates = DEFAULT_DATES.filter(dateObj => {
       const date = typeof dateObj === "string" ? dateObj : dateObj.date;
       return date < todayKey;
     });

@@ -1,238 +1,418 @@
 {
-  "sourceUrl": "https://www.powerleague.com/nl/competitie?league_id=fd12d044-1e65-6cbb-ee14-812e80a0f3b6&division_id=fd12d044-1e65-6cbb-ee14-812e285bfab6",
-  "leagueName": "Thursday Late League S38",
+  "sourceUrl": "https://www.powerleague.com/nl/competitie?league_id=a2354831-ca4a-e7a8-f514-6f7b98ac035a&division_id=a2354831-ca4a-e7a8-f514-6f7b986f095a",
+  "leagueName": "Thursday Late League S40",
   "city": "Amsterdam",
   "venue": "Sportspark Olympiaplein",
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 27-7-2026, 13:40:09",
+  "updatedLabel": "Live sync op 10-9-2026, 10:13:36",
   "standings": [
     {
       "pos": 1,
-      "club": "Le Coq Sportif",
-      "played": 11,
-      "won": 9,
-      "drawn": 0,
-      "lost": 2,
-      "gf": 94,
-      "ga": 50,
-      "gd": 44,
-      "points": 27
-    },
-    {
-      "pos": 2,
-      "club": "Glory Boyz FC",
-      "played": 10,
-      "won": 6,
-      "drawn": 1,
-      "lost": 3,
-      "gf": 62,
-      "ga": 52,
-      "gd": 10,
-      "points": 19
-    },
-    {
-      "pos": 3,
-      "club": "Los Fuegos",
-      "played": 10,
-      "won": 6,
-      "drawn": 0,
-      "lost": 4,
-      "gf": 62,
-      "ga": 61,
-      "gd": 1,
-      "points": 18
-    },
-    {
-      "pos": 4,
-      "club": "Fiorentina Turner",
-      "played": 10,
-      "won": 5,
-      "drawn": 1,
-      "lost": 4,
-      "gf": 62,
-      "ga": 70,
-      "gd": -8,
-      "points": 16
-    },
-    {
-      "pos": 5,
-      "club": "The Mohicans",
-      "played": 10,
-      "won": 5,
-      "drawn": 0,
-      "lost": 5,
-      "gf": 65,
-      "ga": 65,
-      "gd": 0,
-      "points": 15
-    },
-    {
-      "pos": 6,
-      "club": "De Meer",
-      "played": 10,
-      "won": 4,
-      "drawn": 0,
-      "lost": 6,
-      "gf": 58,
-      "ga": 64,
-      "gd": -6,
-      "points": 12
-    },
-    {
-      "pos": 7,
-      "club": "De Hertenjagers Reunited",
-      "played": 11,
+      "club": "Gunners 071 !",
+      "played": 3,
       "won": 3,
       "drawn": 0,
-      "lost": 8,
-      "gf": 57,
-      "ga": 74,
-      "gd": -17,
+      "lost": 0,
+      "gf": 34,
+      "ga": 8,
+      "gd": 26,
       "points": 9
     },
     {
-      "pos": 8,
-      "club": "The Big 5",
-      "played": 10,
+      "pos": 2,
+      "club": "Connaisseurs",
+      "played": 3,
+      "won": 2,
+      "drawn": 1,
+      "lost": 0,
+      "gf": 31,
+      "ga": 15,
+      "gd": 16,
+      "points": 7
+    },
+    {
+      "pos": 3,
+      "club": "FC Ounce",
+      "played": 3,
       "won": 2,
       "drawn": 0,
-      "lost": 8,
-      "gf": 51,
-      "ga": 75,
-      "gd": -24,
+      "lost": 1,
+      "gf": 23,
+      "ga": 19,
+      "gd": 4,
       "points": 6
+    },
+    {
+      "pos": 4,
+      "club": "M1 Capital & Co",
+      "played": 3,
+      "won": 1,
+      "drawn": 2,
+      "lost": 0,
+      "gf": 10,
+      "ga": 5,
+      "gd": 5,
+      "points": 5
+    },
+    {
+      "pos": 5,
+      "club": "Glory Boyz FC",
+      "played": 3,
+      "won": 1,
+      "drawn": 0,
+      "lost": 2,
+      "gf": 16,
+      "ga": 22,
+      "gd": -6,
+      "points": 3
+    },
+    {
+      "pos": 6,
+      "club": "Bal Nassr",
+      "played": 3,
+      "won": 1,
+      "drawn": 0,
+      "lost": 2,
+      "gf": 17,
+      "ga": 33,
+      "gd": -16,
+      "points": 3
+    },
+    {
+      "pos": 7,
+      "club": "Overdie Metals United",
+      "played": 3,
+      "won": 0,
+      "drawn": 1,
+      "lost": 2,
+      "gf": 14,
+      "ga": 32,
+      "gd": -18,
+      "points": 1
+    },
+    {
+      "pos": 8,
+      "club": "Le Coq Sportif",
+      "played": 3,
+      "won": 0,
+      "drawn": 0,
+      "lost": 3,
+      "gf": 9,
+      "ga": 20,
+      "gd": -11,
+      "points": 0
     }
   ],
   "topTeams": [
     {
       "pos": 1,
-      "club": "Le Coq Sportif",
-      "played": 11,
-      "won": 9,
-      "points": 27
+      "club": "Gunners 071 !",
+      "played": 3,
+      "won": 3,
+      "points": 9
     },
     {
       "pos": 2,
-      "club": "Glory Boyz FC",
-      "played": 10,
-      "won": 6,
-      "points": 19
+      "club": "Connaisseurs",
+      "played": 3,
+      "won": 2,
+      "points": 7
     },
     {
       "pos": 3,
-      "club": "Los Fuegos",
-      "played": 10,
-      "won": 6,
-      "points": 18
+      "club": "FC Ounce",
+      "played": 3,
+      "won": 2,
+      "points": 6
     }
   ],
   "nextGames": [
     {
-      "date": "30/07/2026",
+      "date": "10/09/2026",
       "time": "19:00",
-      "home": "Los Fuegos",
-      "away": "De Meer"
+      "home": "Bal Nassr",
+      "away": "M1 Capital & Co"
     },
     {
-      "date": "30/07/2026",
-      "time": "20:00",
-      "home": "Le Coq Sportif",
-      "away": "Fiorentina Turner"
-    },
-    {
-      "date": "30/07/2026",
-      "time": "20:00",
-      "home": "The Big 5",
-      "away": "De Hertenjagers Reunited"
-    },
-    {
-      "date": "30/07/2026",
-      "time": "20:00",
-      "home": "The Mohicans",
-      "away": "Glory Boyz FC"
-    },
-    {
-      "date": "30/07/2026",
-      "time": "21:00",
-      "home": "Fiorentina Turner",
-      "away": "Glory Boyz FC"
-    },
-    {
-      "date": "06/08/2026",
+      "date": "10/09/2026",
       "time": "19:00",
-      "home": "De Meer",
-      "away": "The Mohicans"
-    },
-    {
-      "date": "06/08/2026",
-      "time": "20:00",
-      "home": "Le Coq Sportif",
-      "away": "The Big 5"
-    },
-    {
-      "date": "06/08/2026",
-      "time": "20:00",
-      "home": "Fiorentina Turner",
-      "away": "Los Fuegos"
-    },
-    {
-      "date": "06/08/2026",
-      "time": "20:00",
-      "home": "De Hertenjagers Reunited",
-      "away": "Glory Boyz FC"
-    },
-    {
-      "date": "13/08/2026",
-      "time": "20:00",
-      "home": "The Big 5",
-      "away": "Fiorentina Turner"
-    },
-    {
-      "date": "13/08/2026",
-      "time": "20:00",
-      "home": "De Hertenjagers Reunited",
-      "away": "De Meer"
-    },
-    {
-      "date": "13/08/2026",
-      "time": "20:00",
-      "home": "The Mohicans",
-      "away": "Los Fuegos"
-    },
-    {
-      "date": "13/08/2026",
-      "time": "21:00",
       "home": "Glory Boyz FC",
       "away": "Le Coq Sportif"
+    },
+    {
+      "date": "10/09/2026",
+      "time": "20:00",
+      "home": "Gunners 071 !",
+      "away": "Overdie Metals United"
+    },
+    {
+      "date": "17/09/2026",
+      "time": "20:00",
+      "home": "Bal Nassr",
+      "away": "Glory Boyz FC"
+    },
+    {
+      "date": "17/09/2026",
+      "time": "20:00",
+      "home": "Connaisseurs",
+      "away": "Gunners 071 !"
+    },
+    {
+      "date": "17/09/2026",
+      "time": "20:00",
+      "home": "M1 Capital & Co",
+      "away": "FC Ounce"
+    },
+    {
+      "date": "17/09/2026",
+      "time": "20:00",
+      "home": "Le Coq Sportif",
+      "away": "Overdie Metals United"
+    },
+    {
+      "date": "24/09/2026",
+      "time": "21:00",
+      "home": "Gunners 071 !",
+      "away": "FC Ounce"
+    },
+    {
+      "date": "24/09/2026",
+      "time": "21:00",
+      "home": "Overdie Metals United",
+      "away": "Bal Nassr"
+    },
+    {
+      "date": "24/09/2026",
+      "time": "21:00",
+      "home": "Le Coq Sportif",
+      "away": "Connaisseurs"
+    },
+    {
+      "date": "24/09/2026",
+      "time": "21:00",
+      "home": "Glory Boyz FC",
+      "away": "M1 Capital & Co"
+    },
+    {
+      "date": "01/10/2026",
+      "time": "16:00",
+      "home": "FC Ounce",
+      "away": "Le Coq Sportif"
+    },
+    {
+      "date": "01/10/2026",
+      "time": "20:00",
+      "home": "Bal Nassr",
+      "away": "Connaisseurs"
+    },
+    {
+      "date": "01/10/2026",
+      "time": "21:00",
+      "home": "M1 Capital & Co",
+      "away": "Gunners 071 !"
+    },
+    {
+      "date": "01/10/2026",
+      "time": "21:00",
+      "home": "Glory Boyz FC",
+      "away": "Overdie Metals United"
+    },
+    {
+      "date": "08/10/2026",
+      "time": "19:00",
+      "home": "Bal Nassr",
+      "away": "FC Ounce"
+    },
+    {
+      "date": "08/10/2026",
+      "time": "19:00",
+      "home": "Overdie Metals United",
+      "away": "M1 Capital & Co"
+    },
+    {
+      "date": "08/10/2026",
+      "time": "19:00",
+      "home": "Connaisseurs",
+      "away": "Glory Boyz FC"
+    },
+    {
+      "date": "08/10/2026",
+      "time": "19:00",
+      "home": "Le Coq Sportif",
+      "away": "Gunners 071 !"
+    },
+    {
+      "date": "15/10/2026",
+      "time": "19:00",
+      "home": "M1 Capital & Co",
+      "away": "Le Coq Sportif"
+    },
+    {
+      "date": "15/10/2026",
+      "time": "19:00",
+      "home": "Overdie Metals United",
+      "away": "Connaisseurs"
+    },
+    {
+      "date": "15/10/2026",
+      "time": "20:00",
+      "home": "Glory Boyz FC",
+      "away": "FC Ounce"
+    },
+    {
+      "date": "15/10/2026",
+      "time": "20:00",
+      "home": "Gunners 071 !",
+      "away": "Bal Nassr"
+    },
+    {
+      "date": "22/10/2026",
+      "time": "20:00",
+      "home": "FC Ounce",
+      "away": "Overdie Metals United"
+    },
+    {
+      "date": "22/10/2026",
+      "time": "20:00",
+      "home": "Bal Nassr",
+      "away": "Le Coq Sportif"
+    },
+    {
+      "date": "22/10/2026",
+      "time": "20:00",
+      "home": "Glory Boyz FC",
+      "away": "Gunners 071 !"
+    },
+    {
+      "date": "22/10/2026",
+      "time": "20:00",
+      "home": "Connaisseurs",
+      "away": "M1 Capital & Co"
+    },
+    {
+      "date": "29/10/2026",
+      "time": "21:00",
+      "home": "M1 Capital & Co",
+      "away": "Bal Nassr"
+    },
+    {
+      "date": "29/10/2026",
+      "time": "21:00",
+      "home": "Le Coq Sportif",
+      "away": "Glory Boyz FC"
+    },
+    {
+      "date": "29/10/2026",
+      "time": "21:00",
+      "home": "Overdie Metals United",
+      "away": "Gunners 071 !"
+    },
+    {
+      "date": "29/10/2026",
+      "time": "21:00",
+      "home": "Connaisseurs",
+      "away": "FC Ounce"
+    },
+    {
+      "date": "05/11/2026",
+      "time": "20:00",
+      "home": "Overdie Metals United",
+      "away": "Le Coq Sportif"
+    },
+    {
+      "date": "05/11/2026",
+      "time": "20:00",
+      "home": "Gunners 071 !",
+      "away": "Connaisseurs"
+    },
+    {
+      "date": "05/11/2026",
+      "time": "21:00",
+      "home": "Glory Boyz FC",
+      "away": "Bal Nassr"
+    },
+    {
+      "date": "05/11/2026",
+      "time": "21:00",
+      "home": "FC Ounce",
+      "away": "M1 Capital & Co"
+    },
+    {
+      "date": "12/11/2026",
+      "time": "19:00",
+      "home": "FC Ounce",
+      "away": "Gunners 071 !"
+    },
+    {
+      "date": "12/11/2026",
+      "time": "19:00",
+      "home": "Connaisseurs",
+      "away": "Le Coq Sportif"
+    },
+    {
+      "date": "12/11/2026",
+      "time": "19:00",
+      "home": "M1 Capital & Co",
+      "away": "Glory Boyz FC"
+    },
+    {
+      "date": "12/11/2026",
+      "time": "19:00",
+      "home": "Bal Nassr",
+      "away": "Overdie Metals United"
+    },
+    {
+      "date": "19/11/2026",
+      "time": "19:00",
+      "home": "Overdie Metals United",
+      "away": "Glory Boyz FC"
+    },
+    {
+      "date": "19/11/2026",
+      "time": "19:00",
+      "home": "Gunners 071 !",
+      "away": "M1 Capital & Co"
+    },
+    {
+      "date": "19/11/2026",
+      "time": "20:00",
+      "home": "Connaisseurs",
+      "away": "Bal Nassr"
+    },
+    {
+      "date": "19/11/2026",
+      "time": "20:00",
+      "home": "Le Coq Sportif",
+      "away": "FC Ounce"
     }
   ],
-  "lastRoundLabel": "23/07/2026",
+  "lastRoundLabel": "03/09/2026",
   "lastRoundResults": [
     {
-      "home": "The Mohicans",
-      "homeScore": 7,
-      "awayScore": 4,
-      "away": "The Big 5"
+      "home": "Overdie Metals United",
+      "homeScore": 8,
+      "awayScore": 13,
+      "away": "FC Ounce"
     },
     {
-      "home": "De Hertenjagers Reunited",
-      "homeScore": 0,
-      "awayScore": 10,
-      "away": "Le Coq Sportif"
+      "home": "Le Coq Sportif",
+      "homeScore": 6,
+      "awayScore": 7,
+      "away": "Bal Nassr"
     },
     {
-      "home": "Fiorentina Turner",
-      "homeScore": 5,
-      "awayScore": 8,
-      "away": "De Meer"
+      "home": "M1 Capital & Co",
+      "homeScore": 2,
+      "awayScore": 2,
+      "away": "Connaisseurs"
     },
     {
-      "home": "Glory Boyz FC",
-      "homeScore": 4,
-      "awayScore": 5,
-      "away": "Los Fuegos"
+      "home": "Gunners 071 !",
+      "homeScore": 10,
+      "awayScore": 2,
+      "away": "Glory Boyz FC"
     }
   ]
 }
