@@ -7,6 +7,9 @@ const SUPABASE_URL = "https://egdsaevqmnwelliroztr.supabase.co";
 const SUPABASE_KEY = "sb_publishable_2xhR-vsq212VM6HWTgy6GQ_3nHZs0-h";
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 const PUBLIC_VOTER_ID = 9999;
+// S38 votes remain archived in Supabase because public RLS does not allow
+// deleting them. Only votes cast after the S40 reset are loaded by the app.
+const MOTM_SEASON_RESET_DATE = "2026-09-01";
 
 // ── DEFAULTS ──────────────────────────────────────────────────────────────────
 const DEFAULT_DATES = [
@@ -1016,7 +1019,8 @@ export default function App() {
         // Load MOTM votes (shared cross-device via Supabase)
         const { data: mvData, error: mvErr } = await db
           .from("motm_votes")
-          .select("round_key,voter_player_id,target_player_id");
+          .select("round_key,voter_player_id,target_player_id")
+          .gte("round_key", MOTM_SEASON_RESET_DATE);
         if (!mvErr && mvData) {
           const votesObj = {};
           mvData.forEach(row => {
