@@ -6,7 +6,7 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 23-9-2026, 19:39:41",
+  "updatedLabel": "Live sync op 23-9-2026, 22:27:32",
   "standings": [
     {
       "pos": 1,
@@ -144,8 +144,8 @@
     {
       "date": "24/09/2026",
       "time": "21:00",
-      "home": "Overdie Metals United",
-      "away": "Bal Nassr"
+      "home": "Bal Nassr",
+      "away": "FC Ounce"
     },
     {
       "date": "01/10/2026",
@@ -170,12 +170,6 @@
       "time": "21:00",
       "home": "Glory Boyz FC",
       "away": "Overdie Metals United"
-    },
-    {
-      "date": "08/10/2026",
-      "time": "19:00",
-      "home": "Bal Nassr",
-      "away": "FC Ounce"
     },
     {
       "date": "08/10/2026",
