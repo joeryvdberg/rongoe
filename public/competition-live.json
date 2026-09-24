@@ -6,7 +6,7 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 24-9-2026, 15:27:27",
+  "updatedLabel": "Live sync op 24-9-2026, 19:26:03",
   "standings": [
     {
       "pos": 1,
@@ -23,74 +23,74 @@
     {
       "pos": 2,
       "club": "M1 Capital & Co",
-      "played": 5,
+      "played": 6,
       "won": 3,
-      "drawn": 2,
+      "drawn": 3,
       "lost": 0,
       "gf": 27,
       "ga": 16,
       "gd": 11,
-      "points": 11
+      "points": 12
     },
     {
       "pos": 3,
       "club": "Connaisseurs",
-      "played": 4,
+      "played": 5,
       "won": 3,
-      "drawn": 1,
+      "drawn": 2,
       "lost": 0,
       "gf": 38,
       "ga": 20,
       "gd": 18,
-      "points": 10
+      "points": 11
     },
     {
       "pos": 4,
       "club": "FC Ounce",
-      "played": 4,
+      "played": 5,
       "won": 2,
-      "drawn": 0,
+      "drawn": 1,
       "lost": 2,
       "gf": 30,
       "ga": 28,
       "gd": 2,
-      "points": 6
+      "points": 7
     },
     {
       "pos": 5,
       "club": "Le Coq Sportif",
-      "played": 5,
+      "played": 6,
       "won": 2,
-      "drawn": 0,
+      "drawn": 1,
       "lost": 3,
       "gf": 26,
       "ga": 27,
       "gd": -1,
-      "points": 6
+      "points": 7
     },
     {
       "pos": 6,
       "club": "Glory Boyz FC",
-      "played": 5,
+      "played": 6,
       "won": 2,
-      "drawn": 0,
+      "drawn": 1,
       "lost": 3,
       "gf": 26,
       "ga": 35,
       "gd": -9,
-      "points": 6
+      "points": 7
     },
     {
       "pos": 7,
       "club": "Bal Nassr",
-      "played": 5,
+      "played": 6,
       "won": 1,
-      "drawn": 0,
+      "drawn": 1,
       "lost": 4,
       "gf": 27,
       "ga": 49,
       "gd": -22,
-      "points": 3
+      "points": 4
     },
     {
       "pos": 8,
@@ -116,46 +116,28 @@
     {
       "pos": 2,
       "club": "M1 Capital & Co",
-      "played": 5,
+      "played": 6,
       "won": 3,
-      "points": 11
+      "points": 12
     },
     {
       "pos": 3,
       "club": "Connaisseurs",
-      "played": 4,
+      "played": 5,
       "won": 3,
-      "points": 10
+      "points": 11
     }
   ],
   "nextGames": [
     {
-      "date": "24/09/2026",
-      "time": "20:00",
-      "home": "Le Coq Sportif",
-      "away": "Connaisseurs"
-    },
-    {
-      "date": "24/09/2026",
-      "time": "20:00",
-      "home": "Glory Boyz FC",
-      "away": "M1 Capital & Co"
-    },
-    {
-      "date": "24/09/2026",
-      "time": "21:00",
-      "home": "Bal Nassr",
-      "away": "FC Ounce"
-    },
-    {
       "date": "01/10/2026",
-      "time": "20:00",
+      "time": "19:00",
       "home": "FC Ounce",
       "away": "Le Coq Sportif"
     },
     {
       "date": "01/10/2026",
-      "time": "20:00",
+      "time": "19:00",
       "home": "Bal Nassr",
       "away": "Connaisseurs"
     },
@@ -215,15 +197,15 @@
     },
     {
       "date": "22/10/2026",
-      "time": "20:00",
-      "home": "FC Ounce",
-      "away": "Overdie Metals United"
+      "time": "19:00",
+      "home": "Bal Nassr",
+      "away": "Le Coq Sportif"
     },
     {
       "date": "22/10/2026",
       "time": "20:00",
-      "home": "Bal Nassr",
-      "away": "Le Coq Sportif"
+      "home": "FC Ounce",
+      "away": "Overdie Metals United"
     },
     {
       "date": "22/10/2026",
@@ -334,31 +316,25 @@
       "away": "FC Ounce"
     }
   ],
-  "lastRoundLabel": "17/09/2026",
+  "lastRoundLabel": "24/09/2026",
   "lastRoundResults": [
     {
       "home": "Bal Nassr",
-      "homeScore": 6,
-      "awayScore": 8,
-      "away": "Glory Boyz FC"
-    },
-    {
-      "home": "Connaisseurs",
-      "homeScore": 7,
-      "awayScore": 5,
-      "away": "Gunners 071 !"
-    },
-    {
-      "home": "M1 Capital & Co",
-      "homeScore": 9,
-      "awayScore": 7,
+      "homeScore": 0,
+      "awayScore": 0,
       "away": "FC Ounce"
     },
     {
       "home": "Le Coq Sportif",
-      "homeScore": 10,
-      "awayScore": 5,
-      "away": "Overdie Metals United"
+      "homeScore": 0,
+      "awayScore": 0,
+      "away": "Connaisseurs"
+    },
+    {
+      "home": "Glory Boyz FC",
+      "homeScore": 0,
+      "awayScore": 0,
+      "away": "M1 Capital & Co"
     }
   ]
 }
