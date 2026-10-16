@@ -6,7 +6,7 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 16-10-2026, 06:13:12",
+  "updatedLabel": "Live sync op 16-10-2026, 11:33:39",
   "standings": [
     {
       "pos": 1,
@@ -51,9 +51,9 @@
       "won": 4,
       "drawn": 0,
       "lost": 3,
-      "gf": 51,
+      "gf": 54,
       "ga": 47,
-      "gd": 4,
+      "gd": 7,
       "points": 12
     },
     {
@@ -88,8 +88,8 @@
       "drawn": 0,
       "lost": 7,
       "gf": 40,
-      "ga": 66,
-      "gd": -26,
+      "ga": 69,
+      "gd": -29,
       "points": 6
     },
     {
@@ -261,7 +261,7 @@
     {
       "home": "Glory Boyz FC",
       "homeScore": 2,
-      "awayScore": 4,
+      "awayScore": 7,
       "away": "FC Ounce"
     },
     {
