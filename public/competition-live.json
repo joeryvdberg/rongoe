@@ -6,19 +6,19 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 22-10-2026, 10:00:36",
+  "updatedLabel": "Live sync op 22-10-2026, 15:11:15",
   "standings": [
     {
       "pos": 1,
       "club": "Connaisseurs",
-      "played": 8,
-      "won": 6,
+      "played": 9,
+      "won": 7,
       "drawn": 1,
       "lost": 1,
-      "gf": 72,
+      "gf": 82,
       "ga": 44,
-      "gd": 28,
-      "points": 19
+      "gd": 38,
+      "points": 22
     },
     {
       "pos": 2,
@@ -35,29 +35,41 @@
     {
       "pos": 3,
       "club": "M1 Capital & Co",
-      "played": 9,
+      "played": 10,
       "won": 5,
       "drawn": 2,
-      "lost": 2,
+      "lost": 3,
       "gf": 51,
-      "ga": 41,
-      "gd": 10,
+      "ga": 51,
+      "gd": 0,
       "points": 17
     },
     {
       "pos": 4,
-      "club": "FC Ounce",
-      "played": 7,
+      "club": "Overdie Metals United",
+      "played": 9,
       "won": 4,
-      "drawn": 0,
-      "lost": 3,
-      "gf": 54,
-      "ga": 47,
-      "gd": 7,
-      "points": 12
+      "drawn": 1,
+      "lost": 4,
+      "gf": 61,
+      "ga": 59,
+      "gd": 2,
+      "points": 13
     },
     {
       "pos": 5,
+      "club": "FC Ounce",
+      "played": 8,
+      "won": 4,
+      "drawn": 0,
+      "lost": 4,
+      "gf": 54,
+      "ga": 57,
+      "gd": -3,
+      "points": 12
+    },
+    {
+      "pos": 6,
       "club": "Le Coq Sportif",
       "played": 9,
       "won": 4,
@@ -67,18 +79,6 @@
       "ga": 52,
       "gd": -7,
       "points": 12
-    },
-    {
-      "pos": 6,
-      "club": "Overdie Metals United",
-      "played": 8,
-      "won": 3,
-      "drawn": 1,
-      "lost": 4,
-      "gf": 51,
-      "ga": 59,
-      "gd": -8,
-      "points": 10
     },
     {
       "pos": 7,
@@ -109,9 +109,9 @@
     {
       "pos": 1,
       "club": "Connaisseurs",
-      "played": 8,
-      "won": 6,
-      "points": 19
+      "played": 9,
+      "won": 7,
+      "points": 22
     },
     {
       "pos": 2,
@@ -123,7 +123,7 @@
     {
       "pos": 3,
       "club": "M1 Capital & Co",
-      "played": 9,
+      "played": 10,
       "won": 5,
       "points": 17
     }
@@ -138,20 +138,8 @@
     {
       "date": "22/10/2026",
       "time": "20:00",
-      "home": "FC Ounce",
-      "away": "Overdie Metals United"
-    },
-    {
-      "date": "22/10/2026",
-      "time": "20:00",
       "home": "Glory Boyz FC",
       "away": "Gunners 071 !"
-    },
-    {
-      "date": "22/10/2026",
-      "time": "20:00",
-      "home": "Connaisseurs",
-      "away": "M1 Capital & Co"
     },
     {
       "date": "29/10/2026",
@@ -250,31 +238,19 @@
       "away": "FC Ounce"
     }
   ],
-  "lastRoundLabel": "15/10/2026",
+  "lastRoundLabel": "22/10/2026",
   "lastRoundResults": [
     {
-      "home": "M1 Capital & Co",
-      "homeScore": 7,
-      "awayScore": 3,
-      "away": "Le Coq Sportif"
+      "home": "FC Ounce",
+      "homeScore": 0,
+      "awayScore": 10,
+      "away": "Overdie Metals United"
     },
     {
-      "home": "Glory Boyz FC",
-      "homeScore": 2,
-      "awayScore": 7,
-      "away": "FC Ounce"
-    },
-    {
-      "home": "Overdie Metals United",
-      "homeScore": 6,
-      "awayScore": 3,
-      "away": "Connaisseurs"
-    },
-    {
-      "home": "Gunners 071 !",
-      "homeScore": 11,
-      "awayScore": 8,
-      "away": "Bal Nassr"
+      "home": "Connaisseurs",
+      "homeScore": 10,
+      "awayScore": 0,
+      "away": "M1 Capital & Co"
     }
   ]
 }
