@@ -6,31 +6,31 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 29-10-2026, 12:53:19",
+  "updatedLabel": "Live sync op 29-10-2026, 18:47:36",
   "standings": [
     {
       "pos": 1,
       "club": "Connaisseurs",
-      "played": 9,
+      "played": 10,
       "won": 7,
-      "drawn": 1,
+      "drawn": 2,
       "lost": 1,
       "gf": 82,
       "ga": 44,
       "gd": 38,
-      "points": 22
+      "points": 23
     },
     {
       "pos": 2,
       "club": "Gunners 071 !",
-      "played": 9,
+      "played": 10,
       "won": 7,
-      "drawn": 0,
+      "drawn": 1,
       "lost": 2,
       "gf": 82,
       "ga": 47,
       "gd": 35,
-      "points": 21
+      "points": 22
     },
     {
       "pos": 3,
@@ -47,50 +47,50 @@
     {
       "pos": 4,
       "club": "Le Coq Sportif",
-      "played": 10,
+      "played": 11,
       "won": 5,
-      "drawn": 0,
+      "drawn": 1,
       "lost": 5,
       "gf": 60,
       "ga": 58,
       "gd": 2,
-      "points": 15
+      "points": 16
     },
     {
       "pos": 5,
       "club": "Overdie Metals United",
-      "played": 9,
+      "played": 10,
       "won": 4,
-      "drawn": 1,
+      "drawn": 2,
       "lost": 4,
       "gf": 61,
       "ga": 59,
       "gd": 2,
-      "points": 13
+      "points": 14
     },
     {
       "pos": 6,
       "club": "FC Ounce",
-      "played": 8,
+      "played": 9,
       "won": 4,
-      "drawn": 0,
+      "drawn": 1,
       "lost": 4,
       "gf": 54,
       "ga": 57,
       "gd": -3,
-      "points": 12
+      "points": 13
     },
     {
       "pos": 7,
       "club": "Glory Boyz FC",
-      "played": 10,
+      "played": 11,
       "won": 2,
-      "drawn": 0,
+      "drawn": 1,
       "lost": 8,
       "gf": 45,
       "ga": 79,
       "gd": -34,
-      "points": 6
+      "points": 7
     },
     {
       "pos": 8,
@@ -109,16 +109,16 @@
     {
       "pos": 1,
       "club": "Connaisseurs",
-      "played": 9,
+      "played": 10,
       "won": 7,
-      "points": 22
+      "points": 23
     },
     {
       "pos": 2,
       "club": "Gunners 071 !",
-      "played": 9,
+      "played": 10,
       "won": 7,
-      "points": 21
+      "points": 22
     },
     {
       "pos": 3,
@@ -129,24 +129,6 @@
     }
   ],
   "nextGames": [
-    {
-      "date": "29/10/2026",
-      "time": "21:00",
-      "home": "Le Coq Sportif",
-      "away": "Glory Boyz FC"
-    },
-    {
-      "date": "29/10/2026",
-      "time": "21:00",
-      "home": "Overdie Metals United",
-      "away": "Gunners 071 !"
-    },
-    {
-      "date": "29/10/2026",
-      "time": "21:00",
-      "home": "Connaisseurs",
-      "away": "FC Ounce"
-    },
     {
       "date": "05/11/2026",
       "time": "20:00",
@@ -227,6 +209,24 @@
       "homeScore": 10,
       "awayScore": 0,
       "away": "Bal Nassr"
+    },
+    {
+      "home": "Le Coq Sportif",
+      "homeScore": 0,
+      "awayScore": 0,
+      "away": "Glory Boyz FC"
+    },
+    {
+      "home": "Overdie Metals United",
+      "homeScore": 0,
+      "awayScore": 0,
+      "away": "Gunners 071 !"
+    },
+    {
+      "home": "Connaisseurs",
+      "homeScore": 0,
+      "awayScore": 0,
+      "away": "FC Ounce"
     }
   ]
 }
