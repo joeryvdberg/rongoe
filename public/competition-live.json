@@ -6,7 +6,7 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 29-10-2026, 00:18:47",
+  "updatedLabel": "Live sync op 29-10-2026, 12:53:19",
   "standings": [
     {
       "pos": 1,
@@ -35,14 +35,14 @@
     {
       "pos": 3,
       "club": "M1 Capital & Co",
-      "played": 10,
-      "won": 5,
+      "played": 11,
+      "won": 6,
       "drawn": 2,
       "lost": 3,
-      "gf": 51,
+      "gf": 61,
       "ga": 51,
-      "gd": 0,
-      "points": 17
+      "gd": 10,
+      "points": 20
     },
     {
       "pos": 4,
@@ -95,13 +95,13 @@
     {
       "pos": 8,
       "club": "Bal Nassr",
-      "played": 9,
+      "played": 10,
       "won": 1,
       "drawn": 0,
-      "lost": 8,
+      "lost": 9,
       "gf": 60,
-      "ga": 100,
-      "gd": -40,
+      "ga": 110,
+      "gd": -50,
       "points": 3
     }
   ],
@@ -123,18 +123,12 @@
     {
       "pos": 3,
       "club": "M1 Capital & Co",
-      "played": 10,
-      "won": 5,
-      "points": 17
+      "played": 11,
+      "won": 6,
+      "points": 20
     }
   ],
   "nextGames": [
-    {
-      "date": "29/10/2026",
-      "time": "15:00",
-      "home": "M1 Capital & Co",
-      "away": "Bal Nassr"
-    },
     {
       "date": "29/10/2026",
       "time": "21:00",
@@ -226,31 +220,13 @@
       "away": "FC Ounce"
     }
   ],
-  "lastRoundLabel": "22/10/2026",
+  "lastRoundLabel": "29/10/2026",
   "lastRoundResults": [
     {
-      "home": "FC Ounce",
-      "homeScore": 0,
-      "awayScore": 10,
-      "away": "Overdie Metals United"
-    },
-    {
-      "home": "Bal Nassr",
-      "homeScore": 6,
-      "awayScore": 15,
-      "away": "Le Coq Sportif"
-    },
-    {
-      "home": "Glory Boyz FC",
-      "homeScore": 5,
-      "awayScore": 10,
-      "away": "Gunners 071 !"
-    },
-    {
-      "home": "Connaisseurs",
+      "home": "M1 Capital & Co",
       "homeScore": 10,
       "awayScore": 0,
-      "away": "M1 Capital & Co"
+      "away": "Bal Nassr"
     }
   ]
 }
