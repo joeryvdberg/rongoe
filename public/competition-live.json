@@ -6,7 +6,7 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 10-11-2026, 15:33:23",
+  "updatedLabel": "Live sync op 10-11-2026, 21:24:34",
   "standings": [
     {
       "pos": 1,
@@ -131,15 +131,15 @@
   "nextGames": [
     {
       "date": "12/11/2026",
-      "time": "19:00",
-      "home": "FC Ounce",
-      "away": "Gunners 071 !"
+      "time": "15:00",
+      "home": "Connaisseurs",
+      "away": "Le Coq Sportif"
     },
     {
       "date": "12/11/2026",
       "time": "19:00",
-      "home": "Connaisseurs",
-      "away": "Le Coq Sportif"
+      "home": "FC Ounce",
+      "away": "Gunners 071 !"
     },
     {
       "date": "12/11/2026",
