@@ -6,10 +6,22 @@
   "format": "Men's 5s",
   "gameDay": "Donderdag",
   "gamePrice": "EUR 57.00 per game",
-  "updatedLabel": "Live sync op 12-11-2026, 03:21:08",
+  "updatedLabel": "Live sync op 12-11-2026, 11:39:16",
   "standings": [
     {
       "pos": 1,
+      "club": "Connaisseurs",
+      "played": 13,
+      "won": 9,
+      "drawn": 1,
+      "lost": 3,
+      "gf": 115,
+      "ga": 62,
+      "gd": 53,
+      "points": 28
+    },
+    {
+      "pos": 2,
       "club": "Gunners 071 !",
       "played": 11,
       "won": 9,
@@ -21,7 +33,7 @@
       "points": 27
     },
     {
-      "pos": 2,
+      "pos": 3,
       "club": "M1 Capital & Co",
       "played": 12,
       "won": 7,
@@ -33,27 +45,15 @@
       "points": 23
     },
     {
-      "pos": 3,
-      "club": "Connaisseurs",
-      "played": 11,
-      "won": 7,
-      "drawn": 1,
-      "lost": 3,
-      "gf": 95,
-      "ga": 62,
-      "gd": 33,
-      "points": 22
-    },
-    {
       "pos": 4,
       "club": "Le Coq Sportif",
-      "played": 12,
+      "played": 13,
       "won": 6,
       "drawn": 0,
-      "lost": 6,
+      "lost": 7,
       "gf": 74,
-      "ga": 73,
-      "gd": 1,
+      "ga": 83,
+      "gd": -9,
       "points": 18
     },
     {
@@ -71,13 +71,13 @@
     {
       "pos": 6,
       "club": "FC Ounce",
-      "played": 10,
+      "played": 11,
       "won": 5,
       "drawn": 0,
-      "lost": 5,
+      "lost": 6,
       "gf": 71,
-      "ga": 74,
-      "gd": -3,
+      "ga": 84,
+      "gd": -13,
       "points": 15
     },
     {
@@ -108,39 +108,27 @@
   "topTeams": [
     {
       "pos": 1,
+      "club": "Connaisseurs",
+      "played": 13,
+      "won": 9,
+      "points": 28
+    },
+    {
+      "pos": 2,
       "club": "Gunners 071 !",
       "played": 11,
       "won": 9,
       "points": 27
     },
     {
-      "pos": 2,
+      "pos": 3,
       "club": "M1 Capital & Co",
       "played": 12,
       "won": 7,
       "points": 23
-    },
-    {
-      "pos": 3,
-      "club": "Connaisseurs",
-      "played": 11,
-      "won": 7,
-      "points": 22
     }
   ],
   "nextGames": [
-    {
-      "date": "12/11/2026",
-      "time": "15:00",
-      "home": "Connaisseurs",
-      "away": "Le Coq Sportif"
-    },
-    {
-      "date": "12/11/2026",
-      "time": "15:00",
-      "home": "FC Ounce",
-      "away": "Connaisseurs"
-    },
     {
       "date": "12/11/2026",
       "time": "19:00",
@@ -190,31 +178,13 @@
       "away": "FC Ounce"
     }
   ],
-  "lastRoundLabel": "05/11/2026",
+  "lastRoundLabel": "12/11/2026",
   "lastRoundResults": [
     {
-      "home": "Glory Boyz FC",
-      "homeScore": 3,
-      "awayScore": 6,
-      "away": "Bal Nassr"
-    },
-    {
-      "home": "Overdie Metals United",
-      "homeScore": 11,
-      "awayScore": 8,
-      "away": "Le Coq Sportif"
-    },
-    {
-      "home": "FC Ounce",
-      "homeScore": 9,
-      "awayScore": 11,
-      "away": "M1 Capital & Co"
-    },
-    {
-      "home": "Gunners 071 !",
+      "home": "Connaisseurs",
       "homeScore": 10,
-      "awayScore": 7,
-      "away": "Connaisseurs"
+      "awayScore": 0,
+      "away": "Le Coq Sportif"
     }
   ]
 }
